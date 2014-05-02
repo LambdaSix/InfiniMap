@@ -4,7 +4,7 @@ namespace InfiniMap
 {
     public interface ISerialize
     {
-        void Write(Stream stream);
+        void Write(BinaryWriter stream);
     }
 
     public interface IDeserialize

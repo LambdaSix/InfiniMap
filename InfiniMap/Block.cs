@@ -2,104 +2,142 @@ using System;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.IO;
-using System.Runtime.InteropServices;
+using System.Linq;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Bson;
-using Newtonsoft.Json.Linq;
 
 namespace InfiniMap
 {
-    /// <summary>
-    /// 
-    /// </summary>
+    public struct StreamInfo
+    {
+        public readonly byte[] BsonBuffer;
+
+        public StreamInfo(byte[] bytes)
+        {
+            BsonBuffer = bytes;
+        }
+
+        public UInt32 GetOffset(long startPosition)
+        {
+            return (uint)startPosition + (uint)BsonBuffer.Length;
+        }
+    }
+
     public class BlockMetadata : DynamicObject
     {
-        private Dictionary<string, dynamic> _dictionary;
+        public Dictionary<string, dynamic> Dictionary;
+
+        public BlockMetadata()
+        {
+            Dictionary = new Dictionary<string, dynamic>();
+        }
 
         public override bool TryGetMember(GetMemberBinder binder, out object result)
         {
-            return _dictionary.TryGetValue(binder.Name, out result);
+            return Dictionary.TryGetValue(binder.Name, out result);
         }
 
         public override bool TrySetMember(SetMemberBinder binder, object value)
         {
             if (value.GetType().IsPrimitive || value is string || value is DateTime)
             {
-                _dictionary[binder.Name] = value;
+                Dictionary[binder.Name] = value;
                 return true;
             }
 
             throw new NotSupportedException("Can only store primitive or string types as a value");
         }
 
-        public byte[] Write()
+        public StreamInfo Write()
         {
-            var stream = new MemoryStream();
-            JsonSerializer ser = new JsonSerializer();
+            if (Dictionary.Count >= 1)
+            {
+                var stream = new MemoryStream();
+                var serializer = new JsonSerializer();
+                var writer = new BsonWriter(stream);
 
-            BsonWriter writer = new BsonWriter(stream);
-
-            ser.Serialize(writer, _dictionary);
+                serializer.Serialize(writer, Dictionary);
+                stream.Seek(0, SeekOrigin.Begin);
+                return new StreamInfo(stream.GetBuffer());
+            }
+            else
+            {
+                return new StreamInfo(Enumerable.Empty<byte>().ToArray());
+            }
         }
     }
 
-    [StructLayout(LayoutKind.Explicit)]
-    public struct Block : ISerialize, IDeserialize
+    public class Block : ISerialize, IDeserialize
     {
         /// <summary>
-        /// Combined blockId and blockMeta.
+        /// Combined BlockId and BlockMeta.
         /// </summary>
-        [FieldOffset(0)]
-        public UInt32 blockData;
+        public UInt32 BlockData;
 
         /// <summary>
-        /// 
+        /// Holds the block ID
         /// </summary>
-        [FieldOffset(0)]
-        public UInt16 blockId;
+        public UInt16 BlockId { get; set; }
 
         /// <summary>
         /// MetaId attached to the block.
         /// </summary>
-        [FieldOffset(2)]
-        public UInt16 blockMeta;
+        public UInt16 BlockMeta { get; set; }
 
         /// <summary>
-        /// Quick access for a small set of block flags
+        /// Quick access for a small set of block Flags
         /// </summary>
-        [FieldOffset(4)]
-        public uint flags;
+        public uint Flags;
 
         /// <summary>
         /// Location in chunk metadata file for optional data
         /// </summary>
-        [FieldOffset(8)]
         public uint TagDataLocation;
 
         /// <summary>
         /// Contains optional extended properties for this specific block instance.
         /// </summary>
-        [FieldOffset(12)]
-        private BlockMetadata ExtendedMetadata;
+        public BlockMetadata ExtendedMetadata = new BlockMetadata();
 
-        public dynamic Metadata { get { return ExtendedMetadata; } }
-
-        public void Write(Stream stream)
+        public dynamic Metadata
         {
-            using (var w = new BinaryWriter(stream))
+            get
             {
-                w.Write(blockData);
-                w.Write(flags);
-                w.Write(TagDataLocation);
+                if (ExtendedMetadata == null)
+                {
+                    throw new NullReferenceException("ExtendedMetaData was null");
+                }
+                return ExtendedMetadata;
             }
+        }
+
+        public Block() : this(0,0) { }
+
+        public Block(UInt32 blockData, UInt32 flags)
+        {
+            BlockData = blockData;
+            Flags = flags;
+            TagDataLocation = 0;
+        }
+
+        public void SetTagOffset(uint position)
+        {
+            TagDataLocation = position;
+        }
+
+        public void Write(BinaryWriter stream)
+        {
+            stream.Write(BlockData);
+            stream.Write(Flags);
+            stream.Write(TagDataLocation);
         }
 
         public void Read(Stream stream)
         {
             using (var r = new BinaryReader(stream))
             {
-                blockData = r.ReadUInt32();
-                flags = r.ReadUInt32();
+                BlockData = r.ReadUInt32();
+                Flags = r.ReadUInt32();
                 TagDataLocation = r.ReadUInt32();
             }
         }
