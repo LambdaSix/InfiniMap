@@ -56,7 +56,6 @@
     <Compile Include="IEntity.cs" />
     <Compile Include="ISerialize.cs" />
     <Compile Include="Map.cs" />
-    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
