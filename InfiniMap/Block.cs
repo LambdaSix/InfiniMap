@@ -72,27 +72,35 @@ namespace InfiniMap
         /// <summary>
         /// Combined BlockId and BlockMeta.
         /// </summary>
-        public UInt32 BlockData;
+        public UInt32 BlockData { get; private set; }
 
         /// <summary>
         /// Holds the block ID
         /// </summary>
-        public UInt16 BlockId { get; set; }
+        public UInt16 BlockId
+        {
+            get { return (UInt16) (BlockData & 0xFFFF); }
+            set { BlockData = (((UInt32)value)&0xFFFF) | ((UInt32) BlockMeta << 16); }
+        }
 
         /// <summary>
         /// MetaId attached to the block.
         /// </summary>
-        public UInt16 BlockMeta { get; set; }
+        public UInt16 BlockMeta
+        {
+            get { return (UInt16) ((BlockData >> 16) & 0xFFFF); }
+            set { BlockData = (((UInt32)BlockId) & 0xFFFF) | ((UInt32)value << 16); }
+        }
 
         /// <summary>
         /// Quick access for a small set of block Flags
         /// </summary>
-        public uint Flags;
+        public UInt32 Flags;
 
         /// <summary>
         /// Location in chunk metadata file for optional data
         /// </summary>
-        public uint TagDataLocation;
+        public UInt32 TagDataLocation;
 
         /// <summary>
         /// Contains optional extended properties for this specific block instance.
