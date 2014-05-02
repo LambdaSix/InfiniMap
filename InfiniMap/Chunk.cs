@@ -41,7 +41,7 @@ namespace InfiniMap
                 Blocks[i] = new TBlockType();
             }
 
-                Entities = new List<TEntityType>();
+            Entities = new List<TEntityType>();
         }
 
         public TBlockType this[int x, int y]
@@ -49,8 +49,8 @@ namespace InfiniMap
             get
             {
                 // Translate from world-space to chunk-space
-                int blockX = Math.Abs(x)/_height;
-                int blockY = Math.Abs(y)/_width;
+                int blockX = x%_height;
+                int blockY = y%_width;
                 // Flat array, so walk the stride length for the Y component.
                 return Blocks[blockX + (blockY*_width)];
             }
