@@ -23,7 +23,7 @@ namespace InfiniMap
 
         public override bool TrySetMember(SetMemberBinder binder, object value)
         {
-            if (value.GetType().IsPrimitive || value is string)
+            if (value.GetType().IsPrimitive || value is string || value is DateTime)
             {
                 _dictionary[binder.Name] = value;
                 return true;
