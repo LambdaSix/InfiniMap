@@ -21,8 +21,8 @@ namespace InfiniMap
         {
             get
             {
-                int xChunk = (x/_chunkHeight);
-                int yChunk = (y/_chunkWidth);
+                var xChunk = (int) Math.Floor(x/(float) _chunkHeight);
+                var yChunk = (int) Math.Floor(y/(float) _chunkWidth);
 
                 Chunk chunk;
                 var foundChunk = Chunks.TryGetValue(Tuple.Create(xChunk, yChunk), out chunk);
