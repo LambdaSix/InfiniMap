@@ -11,7 +11,7 @@ namespace InfiniMap
     }
 
     public class Chunk<TBlockType, TEntityType>
-        where TBlockType : struct, ISerialize
+        where TBlockType : ISerialize, new()
         where TEntityType : class, ISerialize
     {
         private readonly int _width;
@@ -35,7 +35,13 @@ namespace InfiniMap
             _height = height;
             _width = width;
             Blocks = new TBlockType[height*width];
-            Entities = new List<TEntityType>();
+
+            for (int i = 0; i < Blocks.Length; i++)
+            {
+                Blocks[i] = new TBlockType();
+            }
+
+                Entities = new List<TEntityType>();
         }
 
         public TBlockType this[int x, int y]
@@ -48,39 +54,38 @@ namespace InfiniMap
                 // Flat array, so walk the stride length for the Y component.
                 return Blocks[blockX + (blockY*_width)];
             }
-            set { Blocks[x + (y*_width)] = value; }
+            set
+            {
+                int blockX = Math.Abs(x)/_height;
+                int blockY = Math.Abs(y)/_width;
+
+                Blocks[blockX + (blockY*_width)] = value;
+            }
         }
 
-        public void Write(Stream stream)
+        public void Write(BinaryWriter stream)
         {
             // Write chunk header:
-            using (var w = new BinaryWriter(stream))
+            // Magic number header
+            stream.Write(0xC45A);
+            // Version
+            stream.Write(1);
+            // Engine version
+            stream.Write(1);
+            // Number of blocks
+            stream.Write(Blocks.Length);
+
+            foreach (var block in Blocks)
             {
-                // Magic number header
-                w.Write(0xC45A);
-                // Version
-                w.Write(1);
-                // Engine version
-                w.Write(1);
-                // Number of blocks
-                w.Write(Blocks.Length);
+                block.Write(stream);
+            }
 
-                foreach (var block in Blocks)
-                {
-                    block.Write(w.BaseStream);
-                }
+            // Number of entities
+            stream.Write(Entities.Count());
 
-                // Number of entities
-                w.Write(Entities.Count());
-
-                foreach (var entity in Entities)
-                {
-                    entity.Write(w.BaseStream);
-                }
-
-                // Block Metadata
-
-
+            foreach (var entity in Entities)
+            {
+                entity.Write(stream);
             }
         }
     }
