@@ -16,11 +16,6 @@ namespace InfiniMap
         {
             BsonBuffer = bytes;
         }
-
-        public UInt32 GetOffset(long startPosition)
-        {
-            return (uint)startPosition + (uint)BsonBuffer.Length;
-        }
     }
 
     public class BlockMetadata : DynamicObject
@@ -95,12 +90,7 @@ namespace InfiniMap
         /// <summary>
         /// Quick access for a small set of block Flags
         /// </summary>
-        public UInt32 Flags;
-
-        /// <summary>
-        /// Location in chunk metadata file for optional data
-        /// </summary>
-        public UInt64 TagDataLocation;
+        public UInt32 Flags { get; set; }
 
         /// <summary>
         /// Contains optional extended properties for this specific block instance.
@@ -125,19 +115,17 @@ namespace InfiniMap
         {
             BlockData = blockData;
             Flags = flags;
-            TagDataLocation = 0;
         }
 
-        public void SetTagOffset(uint position)
+        public StreamInfo GetMetadata()
         {
-            TagDataLocation = position;
+            return ExtendedMetadata.Write();
         }
 
         public void Write(BinaryWriter stream)
         {
             stream.Write(BlockData);
             stream.Write(Flags);
-            stream.Write(TagDataLocation);
         }
 
         public void Read(Stream stream)
@@ -146,7 +134,6 @@ namespace InfiniMap
             {
                 BlockData = r.ReadUInt32();
                 Flags = r.ReadUInt32();
-                TagDataLocation = r.ReadUInt64();
             }
         }
     }
