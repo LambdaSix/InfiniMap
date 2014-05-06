@@ -17,6 +17,31 @@ namespace InfiniMap
             Chunks = new Dictionary<Tuple<int, int>, Chunk>(64);
         }
 
+        private IEnumerable<Tuple<int, int>> Distance(int startX, int startY, int range)
+        {
+            return Enumerable.Range(startX, range + 1).SelectMany(x => Enumerable.Range(startY, range + 1), Tuple.Create);
+        }
+
+        /// <summary>
+        /// Very simple garbage collection, frees all chunks within the given range.
+        /// </summary>
+        /// <remarks>
+        /// Frees up chunks in a square pattern. Given (0,0) and a range of 1, free:
+        /// 0,0,1,0
+        /// 0,1,1,1
+        /// </remarks>
+        /// <param name="curX">Chunk X to start from</param>
+        /// <param name="curY">Chunk Y to start from</param>
+        /// <param name="range">Square distance to free</param>
+        public void UnloadArea(int curX, int curY, int range) 
+        {
+            // Clean out chunks further than (x,y) -> (x+range, y+range)
+            foreach (var pair in Distance(curX, curY, range))
+            {
+                Chunks.Remove(pair);
+            }
+        }
+
         public Block this[int x, int y]
         {
             get
