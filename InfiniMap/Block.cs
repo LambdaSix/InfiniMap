@@ -100,7 +100,7 @@ namespace InfiniMap
         /// <summary>
         /// Location in chunk metadata file for optional data
         /// </summary>
-        public UInt32 TagDataLocation;
+        public UInt64 TagDataLocation;
 
         /// <summary>
         /// Contains optional extended properties for this specific block instance.
@@ -146,7 +146,7 @@ namespace InfiniMap
             {
                 BlockData = r.ReadUInt32();
                 Flags = r.ReadUInt32();
-                TagDataLocation = r.ReadUInt32();
+                TagDataLocation = r.ReadUInt64();
             }
         }
     }
