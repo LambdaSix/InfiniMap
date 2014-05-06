@@ -7,8 +7,13 @@ namespace InfiniMap
         void Write(BinaryWriter stream);
     }
 
-    public interface IDeserialize
+    public interface IDeserialize<out T>
     {
-        void Read(Stream stream);
+        T Read(BinaryReader stream);
+    }
+
+    public interface ISerializeMetadata
+    {
+        StreamInfo GetMetadata();
     }
 }

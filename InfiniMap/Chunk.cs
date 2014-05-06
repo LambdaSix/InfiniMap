@@ -5,20 +5,18 @@ using System.Linq;
 
 namespace InfiniMap
 {
-    public class Chunk : Chunk<Block, IEntity>
+    public class Chunk : Chunk<Block>
     {
         public Chunk(int height, int width) : base(height, width) { }
     }
 
-    public class Chunk<TBlockType, TEntityType>
-        where TBlockType : ISerialize, new()
-        where TEntityType : class, ISerialize
+    public class Chunk<TBlockType> : ISerialize, IDeserialize<Chunk<TBlockType>>
+        where TBlockType : ISerialize, IDeserialize<TBlockType>, ISerializeMetadata, new()
     {
         private readonly int _width;
         private readonly int _height;
 
         public TBlockType[] Blocks { get; set; }
-        public IEnumerable<TEntityType> Entities { get; set; }
 
         public int Width
         {
@@ -40,8 +38,6 @@ namespace InfiniMap
             {
                 Blocks[i] = new TBlockType();
             }
-
-            Entities = new List<TEntityType>();
         }
 
         public TBlockType this[int x, int y]
@@ -63,15 +59,26 @@ namespace InfiniMap
             }
         }
 
+        public void WriteMetadata(BinaryWriter stream)
+        {
+            // (start, length)
+            ICollection<Tuple<long, long>> offsets = new List<Tuple<long, long>>();
+
+            foreach (var buffer in Blocks.Select(block => block.GetMetadata())) {
+                stream.Write(buffer.BsonBuffer);
+            }
+        }
+
         public void Write(BinaryWriter stream)
         {
             // Write chunk header:
             // Magic number header
             stream.Write(0xC45A);
             // Version
-            stream.Write(1);
-            // Engine version
-            stream.Write(1);
+            stream.Write((byte)1);
+
+            stream.Write(_height);
+            stream.Write(_width);
             // Number of blocks
             stream.Write(Blocks.Length);
 
@@ -79,14 +86,31 @@ namespace InfiniMap
             {
                 block.Write(stream);
             }
+        }
 
-            // Number of entities
-            stream.Write(Entities.Count());
+        public Chunk<TBlockType> Read(BinaryReader stream)
+        {
+            var magicNumber = stream.ReadInt32();
 
-            foreach (var entity in Entities)
+            if (magicNumber != 0xC45A)
+                throw new InvalidOperationException(
+                    "Attempted to load a file with the wrong magic number, corrupted file or not a valid chunk file?");
+
+            var version = stream.ReadByte();
+
+            var height = stream.ReadInt32();
+            var width = stream.ReadInt32();
+
+            var chunk = new Chunk<TBlockType>(height, width);
+
+            var blockCount = stream.ReadInt32();
+
+            for (int i = 0; i < blockCount; i++)
             {
-                entity.Write(stream);
+                chunk.Blocks[i] = new TBlockType().Read(stream);
             }
+
+            return chunk;
         }
     }
 }

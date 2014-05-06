@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 
 namespace InfiniMap
@@ -166,6 +167,23 @@ namespace InfiniMap
         /// <param name="folderPath">Root world folder to save into</param>
         public void Write(string folderPath)
         {
+            foreach (var pair in Chunks.Select(chunk => new {Chunk = chunk.Value.Value, chunk.Key}))
+            {
+                var chunkName = String.Format("{0}/chnk_{1}-{2}.cdat", folderPath, pair.Key.Item1, pair.Key.Item2);
+                var chunkMetadataName = String.Format("{0}/cnk-md_{1}-{2}.cdat", folderPath, pair.Key.Item1, pair.Key.Item2);
+
+                // Write the metadata first, because the block has a byte-offset lookup into the metadata file.
+
+                using (var stream = new BinaryWriter(File.Open(chunkMetadataName, FileMode.Create)))
+                {
+                    pair.Chunk.WriteMetadata(stream);
+                }
+
+                using (var stream = new BinaryWriter(File.Open(chunkName, FileMode.Create)))
+                {
+                    pair.Chunk.Write(stream);
+                }
+            }
         }
 
         /// <summary>
