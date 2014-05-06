@@ -90,7 +90,7 @@ namespace InfiniMap
         /// (2,0) [2,1] [2,2]
         /// (3,0) (3,1) (2,2)
         /// 
-        /// [x,y] are kept in memory, (x,y) are discared from memory.
+        /// [x,y] are kept in memory, (x,y) are discarded from memory.
         /// </remarks>
         /// <param name="curX">Chunk X to start from</param>
         /// <param name="curY">Chunk Y to start from</param>
