@@ -53,7 +53,6 @@
     <Compile Include="Block.cs" />
     <Compile Include="BlockFlags.cs" />
     <Compile Include="Chunk.cs" />
-    <Compile Include="IEntity.cs" />
     <Compile Include="ISerialize.cs" />
     <Compile Include="Map.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
