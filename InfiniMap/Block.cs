@@ -62,7 +62,13 @@ namespace InfiniMap
         }
     }
 
-    public class Block : ISerialize, IDeserialize
+    public interface IBlock
+    {
+        UInt32 BlockData { get; }
+        UInt32 Flags { get; set; }
+    }
+
+    public class Block : ISerialize, IDeserialize<Block>, ISerializeMetadata, IBlock
     {
         /// <summary>
         /// Combined BlockId and BlockMeta.
@@ -128,13 +134,12 @@ namespace InfiniMap
             stream.Write(Flags);
         }
 
-        public void Read(Stream stream)
+        public Block Read(BinaryReader stream)
         {
-            using (var r = new BinaryReader(stream))
-            {
-                BlockData = r.ReadUInt32();
-                Flags = r.ReadUInt32();
-            }
+            BlockData = stream.ReadUInt32();
+            Flags = stream.ReadUInt32();
+
+            return this;
         }
     }
 }
