@@ -125,9 +125,15 @@ namespace InfiniMap
         {
             var localChunks = Distance(curX, curY, range).ToList();
             // Clean out chunks outside of (x,y) -> (x+range, y+range)
+            ICollection<Tuple<int, int>> keys = new Collection<Tuple<int, int>>();
             foreach (var pair in Chunks.Where(pair => !localChunks.Contains(pair.Key)))
             {
-                Chunks.Remove(pair.Key);
+                keys.Add(pair.Key);
+            }
+
+            foreach (var key in keys)
+            {
+                Chunks.Remove(key);
             }
         }
 
@@ -216,37 +222,41 @@ namespace InfiniMap
         /// Load a worldmap from <paramref name="folderPath"/>
         /// </summary>
         /// <param name="folderPath">Root world folder to load from</param>
-        public void Read(string folderPath)
+        public void Read(string folderPath) {}
+
+        private Chunk GetChunk(int x, int y)
         {
+            var xChunk = (int)Math.Floor(x / (float)_chunkHeight);
+            var yChunk = (int)Math.Floor(y / (float)_chunkWidth);
+
+            CacheEntry<Chunk> chunk;
+            var foundChunk = Chunks.TryGetValue(Tuple.Create(xChunk, yChunk), out chunk);
+            if (foundChunk)
+            {
+                chunk.Refresh();
+                return chunk.Value;
+            }
+
+            var newChunk = new Chunk(_chunkHeight, _chunkWidth);
+            Chunks.Add(Tuple.Create(xChunk, yChunk), new CacheEntry<Chunk>(newChunk, DateTime.Now));
+            return newChunk;
         }
 
-        public Block this[int x, int y]
+        private IBlock GetBlock(int x, int y)
         {
-            get
-            {
-                var xChunk = (int) Math.Floor(x/(float) _chunkHeight);
-                var yChunk = (int) Math.Floor(y/(float) _chunkWidth);
-
-                CacheEntry<Chunk> chunk;
-                var foundChunk = Chunks.TryGetValue(Tuple.Create(xChunk, yChunk), out chunk);
-                if (foundChunk)
-                {
-                    chunk.Refresh();
-                    return chunk.Value[x, y];
-                }
-
-                var newChunk = new Chunk(_chunkHeight, _chunkWidth);
-                Chunks.Add(Tuple.Create(xChunk, yChunk), new CacheEntry<Chunk>(newChunk, DateTime.Now));
-                return newChunk[x, y];
-            }
-            set
-            {
-                // Block is a reference type, so we just discard a local pointer after
-                // altering the object
-                var block = this[x, y];
-                block = value;
-            }
+            return GetChunk(x, y)[x,y];
         }
 
+        private void PutBlock(int x, int y, IBlock block)
+        {
+            var chunk = GetChunk(x, y);
+            chunk[x, y] = (Block)block;
+        }
+
+        public IBlock this[int x, int y]
+        {
+            get { return GetBlock(x, y); }
+            set { PutBlock(x, y, value); }
+        }
     }
 }
