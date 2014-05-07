@@ -45,8 +45,8 @@ namespace InfiniMap
             get
             {
                 // Translate from world-space to chunk-space
-                int blockX = x%_height;
-                int blockY = y%_width;
+                int blockX = Math.Abs(x)%_height;
+                int blockY = Math.Abs(y)%_width;
                 // Flat array, so walk the stride length for the Y component.
                 return Blocks[blockX + (blockY*_width)];
             }
