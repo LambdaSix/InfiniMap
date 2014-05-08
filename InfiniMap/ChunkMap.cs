@@ -107,8 +107,8 @@ namespace InfiniMap
                 }
                 set
                 {
-                    int blockX = Math.Abs(x) / _chunkHeight;
-                    int blockY = Math.Abs(y) / _chunkWidth;
+                    int blockX = Math.Abs(x) % _chunkHeight;
+                    int blockY = Math.Abs(y) % _chunkWidth;
 
                     _blocks[blockX + (blockY * _chunkWidth)] = value;
                 }
