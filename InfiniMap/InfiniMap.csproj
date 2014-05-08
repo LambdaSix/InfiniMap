@@ -50,11 +50,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Block.cs" />
-    <Compile Include="BlockFlags.cs" />
-    <Compile Include="Chunk.cs" />
-    <Compile Include="ISerialize.cs" />
-    <Compile Include="Map.cs" />
+    <Compile Include="ChunkMap.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
