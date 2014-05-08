@@ -106,7 +106,7 @@ namespace InfiniMap
 
         /// <summary>
         /// Register a call back for reading chunks in when they aren't found in memory.
-        /// Return null to create a new empty chunk.
+        /// Return an empty list to create a new empty chunk.
         /// </summary>
         /// <remarks>
         /// The 
@@ -135,6 +135,7 @@ namespace InfiniMap
 
                 return new Chunk<T>(_chunkHeight, _chunkWidth, _chunkDepth, items);
             }
+
             // Without a reader function, just return a blank chunk.
             return new Chunk<T>(_chunkHeight, _chunkDepth, _chunkWidth);
         }
@@ -234,8 +235,16 @@ namespace InfiniMap
             public Chunk(int chunkHeight, int chunkWidth, int chunkDepth, IEnumerable<U> items)
                 : this(chunkHeight,chunkWidth,chunkDepth)
             {
-                _blocks = items.ToArray();
-            } 
+                var array = items.ToArray();
+                if (array.Any())
+                {
+                    _blocks = array;
+                }
+                else
+                {
+                    _blocks = new U[chunkHeight*chunkWidth*chunkDepth];
+                }
+            }
 
             public Chunk(int chunkHeight, int chunkWidth, int chunkDepth)
             {
