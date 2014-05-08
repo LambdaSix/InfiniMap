@@ -11,12 +11,12 @@ namespace InfiniMap
 
         public Map2D() : this(16, 16) { }
 
-        public new IEnumerable<T> Within(int x0, int y0, int x1, int y1)
+        public new IEnumerable<T> Within(long x0, long y0, long x1, long y1)
         {
             return base.Within(x0, y0, x1, y1);
         }
 
-        public new T this[int x, int y]
+        public new T this[long x, long y]
         {
             get { return base[x, y]; }
             set { base[x, y] = value; }
@@ -29,43 +29,42 @@ namespace InfiniMap
 
         public Map3D() : this(16,16,16) { }
 
-        public new IEnumerable<T> Within(int x0, int y0, int z0, int x1, int y1, int z1)
+        public new IEnumerable<T> Within(long x0, long y0, long z0, long x1, long y1, long z1)
         {
             return base.Within(x0, y0, z0, x1, y1, z1);
         }
 
-        public new T this[int x, int y, int z]
+        public new T this[long x, long y, long z]
         {
             get { return base[x, y, z]; }
             set { base[x, y, z] = value; }
         }
     }
 
-
     public abstract class ChunkMap<T>
     {
         private readonly int _chunkHeight;
         private readonly int _chunkWidth;
         private readonly int _chunkDepth;
-        private readonly Dictionary<Tuple<int, int, int>, Chunk<T>> _map;
+        private readonly Dictionary<Tuple<long, long, long>, Chunk<T>> _map;
 
         public ChunkMap(int chunkHeight, int chunkWidth, int chunkDepth)
         {
             _chunkHeight = chunkHeight;
             _chunkWidth = chunkWidth;
             _chunkDepth = chunkDepth;
-            _map = new Dictionary<Tuple<int, int, int>, Chunk<T>>(8);
+            _map = new Dictionary<Tuple<long, long, long>, Chunk<T>>(8);
         }
 
         public int Count { get { return _map.Values.Sum(c => c.Count); } }
 
-        protected virtual T this[int x, int y]
+        protected virtual T this[long x, long y]
         {
             get { return Get(x, y, 0); }
             set { Put(x, y, 0, value); }
         }
 
-        protected virtual T this[int x, int y, int z]
+        protected virtual T this[long x, long y, long z]
         {
             get { return Get(x, y, z); }
             set { Put(x, y ,z, value); }
@@ -81,18 +80,18 @@ namespace InfiniMap
             return _map.Values.Any(chunk => chunk.Contains(item, comp));
         }
 
-        protected IEnumerable<T> Within(int x0, int y0, int x1, int y1)
+        protected IEnumerable<T> Within(long x0, long y0, long x1, long y1)
         {
             return Within(x0, y0, 0, x1, y1, 0);
         } 
 
-        protected IEnumerable<T> Within(int x0, int y0, int z0, int x1, int y1, int z1)
+        protected IEnumerable<T> Within(long x0, long y0, long z0, long x1, long y1, long z1)
         {
-            for (int x = x0; x <= x1; x++)
+            for (long x = x0; x <= x1; x++)
             {
-                for (int y = y0; y <= y1; y++)
+                for (long y = y0; y <= y1; y++)
                 {
-                    for (int z = z0; z <= z1; z++)
+                    for (long z = z0; z <= z1; z++)
                     {
                         yield return this[x, y, z];
                     }
@@ -100,11 +99,11 @@ namespace InfiniMap
             }
         }
 
-        private Chunk<T> GetChunk(int x, int y, int z)
+        private Chunk<T> GetChunk(long x, long y, long z)
         {
-            var xChunk = (int) Math.Floor(x/(float) _chunkHeight);
-            var yChunk = (int) Math.Floor(y/(float) _chunkWidth);
-            var zChunk = (int) Math.Floor(z/(float) _chunkDepth);
+            var xChunk = (long) Math.Floor(x/(float) _chunkHeight);
+            var yChunk = (long) Math.Floor(y/(float) _chunkWidth);
+            var zChunk = (long) Math.Floor(z/(float) _chunkDepth);
 
             // Scope chunk to here.
             {
@@ -121,12 +120,12 @@ namespace InfiniMap
             return newChunk;
         }
 
-        protected T Get(int x, int y, int z)
+        protected T Get(long x, long y, long z)
         {
             return GetChunk(x, y, z)[x, y, z];
         }
 
-        protected void Put(int x, int y, int z, T block)
+        protected void Put(long x, long y, long z, T block)
         {
             var chunk = GetChunk(x, y, z);
             chunk[x, y, z] = block;
@@ -151,23 +150,23 @@ namespace InfiniMap
                 _blocks = new U[chunkHeight*chunkWidth*chunkDepth];
             }
 
-            public U this[int x, int y, int z]
+            public U this[long x, long y, long z]
             {
                 get
                 {
                     // Translate from world-space to chunk-space
-                    int blockX = Math.Abs(x) % _chunkHeight;
-                    int blockY = Math.Abs(y) % _chunkWidth;
-                    int blockZ = Math.Abs(z) % _chunkDepth;
+                    var blockX = Math.Abs(x) % _chunkHeight;
+                    var blockY = Math.Abs(y) % _chunkWidth;
+                    var blockZ = Math.Abs(z) % _chunkDepth;
 
                     // Flat array, so walk the stride length for the Y component.
                     return _blocks[blockX + _chunkWidth*(blockY + _chunkDepth*blockZ)];
                 }
                 set
                 {
-                    int blockX = Math.Abs(x) % _chunkHeight;
-                    int blockY = Math.Abs(y) % _chunkWidth;
-                    int blockZ = Math.Abs(z) % _chunkDepth;
+                    var blockX = Math.Abs(x) % _chunkHeight;
+                    var blockY = Math.Abs(y) % _chunkWidth;
+                    var blockZ = Math.Abs(z) % _chunkDepth;
 
                     _blocks[blockX + _chunkWidth*(blockY + _chunkDepth*blockZ)] = value;
                 }
