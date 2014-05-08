@@ -48,6 +48,9 @@ namespace InfiniMap
         private readonly int _chunkDepth;
         private readonly Dictionary<Tuple<long, long, long>, Chunk<T>> _map;
 
+        private Action<IEnumerable<T>, Tuple<long, long, long>> _writerFunc;
+        private Func<Tuple<long, long, long>, IEnumerable<T>> _readerFunc; 
+
         public ChunkMap(int chunkHeight, int chunkWidth, int chunkDepth)
         {
             _chunkHeight = chunkHeight;
@@ -68,6 +71,85 @@ namespace InfiniMap
         {
             get { return Get(x, y, z); }
             set { Put(x, y ,z, value); }
+        }
+
+        /// <summary>
+        /// Start writing chunks to disk, calling <paramref name="writeFunc"/> for every chunk of blocks, with
+        /// that chunk passed to the callback.
+        /// </summary>
+        /// <remarks>
+        /// <paramref name="writeFunc"/> will be called once for every chunk in memory, it gets passed
+        /// a chunks worth of {T} each time, along with the chunk co-ordinates as an 3-tuple of (x,y,z)
+        /// </remarks>
+        /// <param name="writeFunc">Serialization function to use</param>
+        public void Write(Action<IEnumerable<T>, Tuple<long,long,long>> writeFunc)
+        {
+            foreach (var chunk in _map)
+            {
+                writeFunc(chunk.Value.AsEnumerable(), chunk.Key);
+            }
+        }
+
+        /// <summary>
+        /// Register a callback for writing of {T}.
+        /// </summary>
+        /// <remarks>
+        /// Like the Write function, the callback will be called when a chunk is to be saved to disk.
+        /// This is normally when the chunk is about to be unloaded from memory, giving the application
+        /// a chance to persist the chunk to disk.
+        /// </remarks>
+        /// <param name="writerFunc">Serialization function use - (chunkData, (x,y,z))</param>
+        public void RegisterWriter(Action<IEnumerable<T>, Tuple<long,long,long>> writerFunc)
+        {
+            _writerFunc = writerFunc;
+        }
+
+        /// <summary>
+        /// Register a call back for reading chunks in when they aren't found in memory.
+        /// Return null to create a new empty chunk.
+        /// </summary>
+        /// <remarks>
+        /// The 
+        /// </remarks>
+        /// <param name="readerFunc"></param>
+        public void RegisterReader(Func<Tuple<long,long,long>, IEnumerable<T>> readerFunc )
+        {
+            _readerFunc = readerFunc;
+        }
+
+        /// <summary>
+        /// Read a chunk using the reader function, or a blank block.
+        /// </summary>
+        /// <param name="coordinates">3-Tuple of co-ordinates of chunk to read</param>
+        /// <returns>Chunk filled with T</returns>
+        private Chunk<T> ReadChunk(Tuple<long,long,long> coordinates)
+        {
+            if (_readerFunc != null)
+            {
+                var items = _readerFunc(coordinates).ToList();
+
+                if (items.Count() > (_chunkHeight*_chunkWidth*_chunkDepth))
+                {
+                    throw new NotSupportedException("Attempted to load a item block larger than this Maps chunk dimensions");
+                }
+
+                return new Chunk<T>(_chunkHeight, _chunkWidth, _chunkDepth, items);
+            }
+            // Without a reader function, just return a blank chunk.
+            return new Chunk<T>(_chunkHeight, _chunkDepth, _chunkWidth);
+        }
+
+        /// <summary>
+        /// Write a chunk using the write function, if defined.
+        /// </summary>
+        /// <param name="coordinates">3-Tuple of co-ordinates of the chunk to write</param>
+        /// <param name="chunk">The chunk to write</param>
+        private void WriteChunk(Tuple<long, long, long> coordinates, Chunk<T> chunk)
+        {
+            if (_writerFunc != null)
+            {
+                _writerFunc(chunk, coordinates);
+            }
         }
 
         public bool Contains(T item)
@@ -99,24 +181,35 @@ namespace InfiniMap
             }
         }
 
+        private Tuple<long,long,long> TranslateWorldToChunk(long x, long y, long z)
+        {
+            var xChunk = (long)Math.Floor(x / (float)_chunkHeight);
+            var yChunk = (long)Math.Floor(y / (float)_chunkWidth);
+            var zChunk = (long)Math.Floor(z / (float)_chunkDepth);
+            return Tuple.Create(xChunk, yChunk, zChunk);
+        }
+
+        private void UnloadChunk(long x, long y, long z)
+        {
+            WriteChunk(TranslateWorldToChunk(x, y, z), GetChunk(x, y, z));
+        }
+
         private Chunk<T> GetChunk(long x, long y, long z)
         {
-            var xChunk = (long) Math.Floor(x/(float) _chunkHeight);
-            var yChunk = (long) Math.Floor(y/(float) _chunkWidth);
-            var zChunk = (long) Math.Floor(z/(float) _chunkDepth);
+            var coordinates = TranslateWorldToChunk(x, y, z);
 
             // Scope chunk to here.
             {
                 Chunk<T> chunk;
-                var foundChunk = _map.TryGetValue(Tuple.Create(xChunk, yChunk, zChunk), out chunk);
+                var foundChunk = _map.TryGetValue(coordinates, out chunk);
                 if (foundChunk)
                 {
                     return chunk;
                 }
             }
 
-            var newChunk = new Chunk<T>(_chunkHeight, _chunkWidth, _chunkDepth);
-            _map.Add(Tuple.Create(xChunk, yChunk, zChunk), newChunk);
+            var newChunk = ReadChunk(coordinates);
+            _map.Add(coordinates, newChunk);
             return newChunk;
         }
 
@@ -137,6 +230,12 @@ namespace InfiniMap
             private readonly int _chunkHeight;
             private readonly int _chunkDepth;
             private readonly U[] _blocks;
+
+            public Chunk(int chunkHeight, int chunkWidth, int chunkDepth, IEnumerable<U> items)
+                : this(chunkHeight,chunkWidth,chunkDepth)
+            {
+                _blocks = items.ToArray();
+            } 
 
             public Chunk(int chunkHeight, int chunkWidth, int chunkDepth)
             {
