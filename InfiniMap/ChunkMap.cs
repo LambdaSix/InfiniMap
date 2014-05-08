@@ -64,8 +64,8 @@ namespace InfiniMap
                 }
             }
 
-            var newChunk = new Chunk<T>(_chunkHeight, _chunkWidth);
-            _map.Add(Tuple.Create(xChunk, yChunk), new Chunk<T>());
+            var newChunk = new Chunk<T>();
+            _map.Add(Tuple.Create(xChunk, yChunk), newChunk);
             return newChunk;
         }
 
