@@ -138,10 +138,6 @@ namespace InfiniMap
             private readonly int _chunkDepth;
             private readonly U[] _blocks;
 
-            public Chunk() : this(16,16,1) { }
-
-            public Chunk(int chunkHeight, int chunkWidth) : this(chunkHeight, chunkWidth, 1) {}
-
             public Chunk(int chunkHeight, int chunkWidth, int chunkDepth)
             {
                 _chunkWidth = chunkWidth;
