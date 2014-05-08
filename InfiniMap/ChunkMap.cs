@@ -54,11 +54,14 @@ namespace InfiniMap
             var xChunk = (int)Math.Floor(x / (float)_chunkHeight);
             var yChunk = (int)Math.Floor(y / (float)_chunkWidth);
 
-            Chunk<T> chunk;
-            var foundChunk = _map.TryGetValue(Tuple.Create(xChunk, yChunk), out chunk);
-            if (foundChunk)
+            // Scope chunk to here.
             {
-                return chunk;
+                Chunk<T> chunk;
+                var foundChunk = _map.TryGetValue(Tuple.Create(xChunk, yChunk), out chunk);
+                if (foundChunk)
+                {
+                    return chunk;
+                }
             }
 
             var newChunk = new Chunk<T>(_chunkHeight, _chunkWidth);
