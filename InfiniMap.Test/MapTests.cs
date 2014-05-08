@@ -6,23 +6,97 @@ using NUnit.Framework;
 namespace InfiniMap.Test
 {
     [TestFixture]
-    public class MapTests
+    public class MapTests3D
+    {
+        [Test]
+        public void CanInsertItems()
+        {
+            var mapStruct = new Map3D<StructItem>();
+            mapStruct[4, 4, 4] = new StructItem() {ItemId = 4};
+            Assert.That(mapStruct[4, 4, 4].ItemId == 4);
+
+            var mapPrim = new Map3D<float>();
+            mapPrim[4, 4, 4] = 4.0f;
+            Assert.That(Math.Abs(mapPrim[4, 4, 4] - 4.0f) < 0.001);
+
+            var mapClass = new Map3D<ClassItem>();
+            mapClass[4, 4, 4] = new ClassItem() {ItemId = 4};
+            Assert.That(mapClass[4, 4, 4].ItemId == 4);
+        }
+
+        [Test]
+        public void CanUseNegativePositions()
+        {
+            var map = new Map3D<float>();
+            map[-4, -4, -4] = 4.0f;
+            Assert.That(Math.Abs(map[-4, -4, -4] - 4.0f) < 0.001);
+        }
+
+        [Test]
+        public void CanEnumerateRanges()
+        {
+            var map = new Map3D<float>();
+            map[1, 1, 1] = 4.0f;
+
+            Assert.That(map.Within(0, 0, 0, 2, 2, 2).Any());
+            Assert.That(map.Within(0, 0, 0, 2, 2, 2).Any(i => Math.Abs(i - 4.0f) < 0.001));
+        }
+
+        [Test]
+        public void CanAccessRandomly()
+        {
+            var map = new Map3D<float>();
+
+            map[-8, -8, -8] = 4.0f;
+            map[-240, -778, -255] = 8.0f;
+            map[8, 8, 8] = 16.0f;
+            map[240, 778, 255] = 32.0f;
+
+            Assert.That(Math.Abs(map[-240, -778, -255] - 8.0f) < 0.001);
+            Assert.That(Math.Abs(map[240, 778, 255] - 32.0f) < 0.001);
+        }
+
+        [Test]
+        public void SparseCreation()
+        {
+            var map = new Map3D<float>();
+
+            map[-8, -8, -8] = 4.0f;
+            map[-1024, -887, -900] = 8.0f;
+
+            // With only two areas in memory, we only have (16*16*16)*2 blocks
+            Assert.AreEqual(8192, map.Count);
+        }
+
+        [Test]
+        public void CanUseContains()
+        {
+            var map = new Map3D<float>();
+            map[1, 2, 1] = 4.0f;
+
+            Assert.That(map.Contains(4.0f));
+            Assert.That(map.Contains(4.0f, new EqualityLambda<float>((a, b) => Math.Abs(a - b) < 0.001)));
+        }
+    }
+
+    [TestFixture]
+    public class MapTests2D
     {
         [Test]
         public void CanInsertItems()
         {
             // Insert structs
-            var mapStruct = new ChunkMap<StructItem>();
+            var mapStruct = new Map2D<StructItem>();
             mapStruct[4, 4] = new StructItem() {ItemId = 4};
             Assert.That(mapStruct[4, 4].ItemId == 4);
 
             // Insert primitives
-            var mapPrim = new ChunkMap<float>();
+            var mapPrim = new Map2D<float>();
             mapPrim[4, 4] = 4.0f;
             Assert.That(Math.Abs(mapPrim[4, 4] - 4.0f) < 0.001);
 
             // Insert classes
-            var mapClass = new ChunkMap<ClassItem>();
+            var mapClass = new Map2D<ClassItem>();
             mapClass[4, 4] = new ClassItem() {ItemId = 4};
             Assert.That(mapClass[4, 4].ItemId == 4);
         }
@@ -30,7 +104,7 @@ namespace InfiniMap.Test
         [Test]
         public void CanUseNegativePositions()
         {
-            var map = new ChunkMap<float>();
+            var map = new Map2D<float>();
             map[-4, -4] = 4.0f;
             Assert.That(Math.Abs(map[-4, -4] - 4.0f) < 0.001);
         }
@@ -38,7 +112,7 @@ namespace InfiniMap.Test
         [Test]
         public void CanEnumerateRanges()
         {
-            var map = new ChunkMap<float>();
+            var map = new Map2D<float>();
             map[1, 2] = 4.0f;
 
             Assert.That(map.Within(0, 0, 4, 4).Any());
@@ -48,7 +122,7 @@ namespace InfiniMap.Test
         [Test]
         public void CanAccessRandomly()
         {
-            var map = new ChunkMap<float>();
+            var map = new Map2D<float>();
 
             map[-8, -8] = 4.0f;
             map[-240, -778] = 8.0f;
@@ -62,57 +136,57 @@ namespace InfiniMap.Test
         [Test]
         public void SparseCreation()
         {
-            var map = new ChunkMap<float>();
+            var map = new Map2D<float>(16,16);
 
             map[-8, -8] = 4.0f;
             map[-1024, -887] = 8.0f;
 
             // With only two areas in memory, we only have (16*16)*2 blocks.
-            Assert.That(map.Count == 512);
+            Assert.AreEqual(512, map.Count);
         }
 
         [Test]
         public void CanUseContains()
         {
-            var map = new ChunkMap<float>();
+            var map = new Map2D<float>();
             map[1, 2] = 4.0f;
 
             Assert.That(map.Contains(4.0f));
             Assert.That(map.Contains(4.0f, new EqualityLambda<float>((a, b) => Math.Abs(a - b) < 0.001)));
         }
-
-        #region Test Helpers
-
-        internal class EqualityLambda<T> : EqualityComparer<T>
-        {
-            private readonly Func<T, T, bool> _comparer;
-
-            public EqualityLambda(Func<T,T,bool> comparer)
-            {
-                _comparer = comparer;
-            }
-
-            public override bool Equals(T x, T y)
-            {
-                return _comparer(x, y);
-            }
-
-            public override int GetHashCode(T obj)
-            {
-                return obj.GetHashCode();
-            }
-        }
-
-        private struct StructItem
-        {
-            public int ItemId;
-        }
-
-        private class ClassItem
-        {
-            public int ItemId;
-        }
-
-        #endregion
     }
+
+    #region Test Helpers
+
+    internal class EqualityLambda<T> : EqualityComparer<T>
+    {
+        private readonly Func<T, T, bool> _comparer;
+
+        public EqualityLambda(Func<T, T, bool> comparer)
+        {
+            _comparer = comparer;
+        }
+
+        public override bool Equals(T x, T y)
+        {
+            return _comparer(x, y);
+        }
+
+        public override int GetHashCode(T obj)
+        {
+            return obj.GetHashCode();
+        }
+    }
+
+    internal struct StructItem
+    {
+        public int ItemId;
+    }
+
+    internal class ClassItem
+    {
+        public int ItemId;
+    }
+
+    #endregion
 }

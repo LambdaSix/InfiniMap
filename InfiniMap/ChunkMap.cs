@@ -5,27 +5,70 @@ using System.Linq;
 
 namespace InfiniMap
 {
-    public class ChunkMap<T>
+    public class Map2D<T> :ChunkMap<T>
+    {
+        public Map2D(int chunkHeight, int chunkWidth) : base(chunkHeight, chunkWidth, 1) {}
+
+        public Map2D() : this(16, 16) { }
+
+        public new IEnumerable<T> Within(int x0, int y0, int x1, int y1)
+        {
+            return base.Within(x0, y0, x1, y1);
+        }
+
+        public new T this[int x, int y]
+        {
+            get { return base[x, y]; }
+            set { base[x, y] = value; }
+        }
+    }
+
+    public class Map3D<T> : ChunkMap<T>
+    {
+        public Map3D(int chunkHeight, int chunkWidth, int chunkDepth) : base(chunkHeight, chunkWidth, chunkDepth) {}
+
+        public Map3D() : this(16,16,16) { }
+
+        public new IEnumerable<T> Within(int x0, int y0, int z0, int x1, int y1, int z1)
+        {
+            return base.Within(x0, y0, z0, x1, y1, z1);
+        }
+
+        public new T this[int x, int y, int z]
+        {
+            get { return base[x, y, z]; }
+            set { base[x, y, z] = value; }
+        }
+    }
+
+
+    public abstract class ChunkMap<T>
     {
         private readonly int _chunkHeight;
         private readonly int _chunkWidth;
-        private readonly Dictionary<Tuple<int, int>, Chunk<T>> _map;
+        private readonly int _chunkDepth;
+        private readonly Dictionary<Tuple<int, int, int>, Chunk<T>> _map;
 
-        public ChunkMap() : this(16, 16) {}
-
-        public ChunkMap(int chunkHeight, int chunkWidth)
+        public ChunkMap(int chunkHeight, int chunkWidth, int chunkDepth)
         {
             _chunkHeight = chunkHeight;
             _chunkWidth = chunkWidth;
-            _map = new Dictionary<Tuple<int, int>, Chunk<T>>(8);
+            _chunkDepth = chunkDepth;
+            _map = new Dictionary<Tuple<int, int, int>, Chunk<T>>(8);
         }
 
         public int Count { get { return _map.Values.Sum(c => c.Count); } }
 
-        public T this[int x, int y]
+        protected virtual T this[int x, int y]
         {
-            get { return Get(x, y); }
-            set { Put(x, y, value); }
+            get { return Get(x, y, 0); }
+            set { Put(x, y, 0, value); }
+        }
+
+        protected virtual T this[int x, int y, int z]
+        {
+            get { return Get(x, y, z); }
+            set { Put(x, y ,z, value); }
         }
 
         public bool Contains(T item)
@@ -38,79 +81,95 @@ namespace InfiniMap
             return _map.Values.Any(chunk => chunk.Contains(item, comp));
         }
 
-        public IEnumerable<T> Within(int x0, int y0, int x1, int y1)
+        protected IEnumerable<T> Within(int x0, int y0, int x1, int y1)
         {
-            for (int x = x0; x < x1; x++)
+            return Within(x0, y0, 0, x1, y1, 0);
+        } 
+
+        protected IEnumerable<T> Within(int x0, int y0, int z0, int x1, int y1, int z1)
+        {
+            for (int x = x0; x <= x1; x++)
             {
-                for (int y = y0; y < y1; y++)
+                for (int y = y0; y <= y1; y++)
                 {
-                    yield return this[x, y];
+                    for (int z = z0; z <= z1; z++)
+                    {
+                        yield return this[x, y, z];
+                    }
                 }
             }
         }
 
-        private Chunk<T> GetChunk(int x, int y)
+        private Chunk<T> GetChunk(int x, int y, int z)
         {
-            var xChunk = (int)Math.Floor(x / (float)_chunkHeight);
-            var yChunk = (int)Math.Floor(y / (float)_chunkWidth);
+            var xChunk = (int) Math.Floor(x/(float) _chunkHeight);
+            var yChunk = (int) Math.Floor(y/(float) _chunkWidth);
+            var zChunk = (int) Math.Floor(z/(float) _chunkDepth);
 
             // Scope chunk to here.
             {
                 Chunk<T> chunk;
-                var foundChunk = _map.TryGetValue(Tuple.Create(xChunk, yChunk), out chunk);
+                var foundChunk = _map.TryGetValue(Tuple.Create(xChunk, yChunk, zChunk), out chunk);
                 if (foundChunk)
                 {
                     return chunk;
                 }
             }
 
-            var newChunk = new Chunk<T>();
-            _map.Add(Tuple.Create(xChunk, yChunk), newChunk);
+            var newChunk = new Chunk<T>(_chunkHeight, _chunkWidth, _chunkDepth);
+            _map.Add(Tuple.Create(xChunk, yChunk, zChunk), newChunk);
             return newChunk;
         }
 
-        private T Get(int x, int y)
+        protected T Get(int x, int y, int z)
         {
-            return GetChunk(x, y)[x, y];
+            return GetChunk(x, y, z)[x, y, z];
         }
 
-        private void Put(int x, int y, T block)
+        protected void Put(int x, int y, int z, T block)
         {
-            var chunk = GetChunk(x, y);
-            chunk[x, y] = block;
+            var chunk = GetChunk(x, y, z);
+            chunk[x, y, z] = block;
         }
 
         private class Chunk<U> : IEnumerable<U>
         {
             private readonly int _chunkWidth;
             private readonly int _chunkHeight;
+            private readonly int _chunkDepth;
             private readonly U[] _blocks;
 
-            public Chunk() : this(16,16) { }
+            public Chunk() : this(16,16,1) { }
 
-            public Chunk(int chunkHeight, int chunkWidth)
+            public Chunk(int chunkHeight, int chunkWidth) : this(chunkHeight, chunkWidth, 1) {}
+
+            public Chunk(int chunkHeight, int chunkWidth, int chunkDepth)
             {
                 _chunkWidth = chunkWidth;
                 _chunkHeight = chunkHeight;
-                _blocks = new U[chunkHeight*chunkWidth];
+                _chunkDepth = chunkDepth;
+                _blocks = new U[chunkHeight*chunkWidth*chunkDepth];
             }
 
-            public U this[int x, int y]
+            public U this[int x, int y, int z]
             {
                 get
                 {
                     // Translate from world-space to chunk-space
                     int blockX = Math.Abs(x) % _chunkHeight;
                     int blockY = Math.Abs(y) % _chunkWidth;
+                    int blockZ = Math.Abs(z) % _chunkDepth;
+
                     // Flat array, so walk the stride length for the Y component.
-                    return _blocks[blockX + (blockY * _chunkWidth)];
+                    return _blocks[blockX + _chunkWidth*(blockY + _chunkDepth*blockZ)];
                 }
                 set
                 {
                     int blockX = Math.Abs(x) % _chunkHeight;
                     int blockY = Math.Abs(y) % _chunkWidth;
+                    int blockZ = Math.Abs(z) % _chunkDepth;
 
-                    _blocks[blockX + (blockY * _chunkWidth)] = value;
+                    _blocks[blockX + _chunkWidth*(blockY + _chunkDepth*blockZ)] = value;
                 }
             }
 
