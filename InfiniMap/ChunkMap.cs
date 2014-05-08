@@ -77,11 +77,11 @@ namespace InfiniMap
             chunk[x, y] = block;
         }
 
-        private class Chunk<T> : IEnumerable<T>
+        private class Chunk<U> : IEnumerable<U>
         {
             private readonly int _chunkWidth;
             private readonly int _chunkHeight;
-            private readonly T[] _blocks;
+            private readonly U[] _blocks;
 
             public Chunk() : this(16,16) { }
 
@@ -89,10 +89,10 @@ namespace InfiniMap
             {
                 _chunkWidth = chunkWidth;
                 _chunkHeight = chunkHeight;
-                _blocks = new T[chunkHeight*chunkWidth];
+                _blocks = new U[chunkHeight*chunkWidth];
             }
 
-            public T this[int x, int y]
+            public U this[int x, int y]
             {
                 get
                 {
@@ -111,7 +111,7 @@ namespace InfiniMap
                 }
             }
 
-            public T this[int n]
+            public U this[int n]
             {
                 get { return _blocks[n]; }
                 set { _blocks[n] = value; }
@@ -129,18 +129,18 @@ namespace InfiniMap
                 return Enumerate();
             }
 
-            public IEnumerator<T> GetEnumerator()
+            public IEnumerator<U> GetEnumerator()
             {
                 return Enumerate();
             } 
 
-            private class ChunkEnumerator : IEnumerator<T>
+            private class ChunkEnumerator : IEnumerator<U>
             {
-                private readonly Chunk<T> _collection;
+                private readonly Chunk<U> _collection;
                 private int _index;
-                private T _current;
+                private U _current;
 
-                public T Current
+                public U Current
                 {
                     get { return _current; }
                 }
@@ -150,11 +150,11 @@ namespace InfiniMap
                     get { return Current; }
                 }
 
-                internal ChunkEnumerator(Chunk<T> collection)
+                internal ChunkEnumerator(Chunk<U> collection)
                 {
                     _collection = collection;
                     _index = -1;
-                    _current = default(T);
+                    _current = default(U);
                 }
 
                 public void Dispose() {}
