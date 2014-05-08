@@ -22,6 +22,12 @@ namespace InfiniMap
 
         public int Count { get { return _map.Values.Sum(c => c.Count); } }
 
+        public T this[int x, int y]
+        {
+            get { return Get(x, y); }
+            set { Put(x, y, value); }
+        }
+
         public bool Contains(T item)
         {
             return _map.Values.Any(chunk => chunk.Contains(item));
@@ -69,12 +75,6 @@ namespace InfiniMap
         {
             var chunk = GetChunk(x, y);
             chunk[x, y] = block;
-        }
-
-        public T this[int x, int y]
-        {
-            get { return Get(x, y); }
-            set { Put(x, y, value); }
         }
 
         private class Chunk<T> : IEnumerable<T>
