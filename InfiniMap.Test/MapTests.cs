@@ -77,6 +77,32 @@ namespace InfiniMap.Test
             Assert.That(map.Contains(4.0f));
             Assert.That(map.Contains(4.0f, new EqualityLambda<float>((a, b) => Math.Abs(a - b) < 0.001)));
         }
+
+        [Test]
+        public void IsCubic()
+        {
+            var map = new Map3D<float>();
+
+            // 'Ground Level'
+            map[1, 1, 1] = 1.0f;
+
+            // 'Cloud Level'
+            map[1, 1, 64] = 64.0f;
+
+            // 'Atmosphere'
+            map[1, 1, 128] = 128.0f;
+
+            // Spaaaace
+            map[1, 1, 256] = 256.0f;
+
+            // Dad, are we space now?
+            map[1, 1, 2048] = 2048.0f;
+
+            // No son, we are Aldebaran.
+            map[1, 1, Int64.MaxValue] = 8192.0f;
+
+            Assert.AreEqual(((16*16*16)*6), map.Count);
+        }
     }
 
     [TestFixture]
