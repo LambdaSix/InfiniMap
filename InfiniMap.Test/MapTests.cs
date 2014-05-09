@@ -103,6 +103,75 @@ namespace InfiniMap.Test
 
             Assert.AreEqual(((16*16*16)*6), map.Count);
         }
+
+        [Test]
+        public void SupportsUnloading()
+        {
+            var map = new Map3D<float>();
+
+            map[0, 0, 0] = 2.0f;
+            map[16, 16, 16] = 2.0f;
+            map[33, 33, 33] = 4.0f;
+
+            Assert.AreEqual((16*16*16)*3, map.Count);
+
+            map.UnloadArea(0, 0, 0, 33, 33, 33);
+
+            Assert.AreEqual(0, map.Count);
+        }
+
+        [Test]
+        public void ChunkGathering()
+        {
+            var map = new Map3D<float>(16, 16, 16);
+
+            map[1, 1, 1] = 2.0f;
+            map[1, 1, 17] = 4.0f;
+            map[1, 1, 33] = 8.0f;
+
+            // Assert we have 3 chunks in memory.
+            Assert.AreEqual((16 * 16 * 16) * 3, map.Count);
+
+            // A single chunk at the bottom of the stack
+            {
+                var chunksFound = map.ChunksWithin(0, 0, 0, 15, 15, 15, createIfNull: false).ToList();
+                Assert.AreEqual(1, chunksFound.Count());
+                Assert.AreEqual(0, chunksFound.Select(s => s.Item3).First());
+
+                // Assert that it is the correct chunk
+                Assert.That(chunksFound.ElementAt(0).Item4.Contains(2.0f));
+            }
+
+            // All three chunks stacked on top of each other
+            {
+                var chunksFound = map.ChunksWithin(0, 0, 0, 15, 15, 33, createIfNull: false).ToList();
+                Assert.AreEqual(3, chunksFound.Count());
+
+                IEnumerable<long> zSequences = new List<long> { 0, 16, 32 };
+                var chunks = chunksFound.Select(chunk => chunk.Item3).OrderBy(s => s);
+                Assert.AreEqual(3, chunks.Union(zSequences).Count());
+                
+                // Assert we have the actual chunks
+                Assert.That(chunksFound.ElementAt(0).Item4.Contains(2.0f));
+                Assert.That(chunksFound.ElementAt(1).Item4.Contains(4.0f));
+                Assert.That(chunksFound.ElementAt(2).Item4.Contains(8.0f));
+            }
+
+            // The two top most stacks
+            {
+                var chunksFound = map.ChunksWithin(0, 0, 16, 15, 15, 33, createIfNull: false).ToList();
+                Assert.AreEqual(2, chunksFound.Count());
+
+                // Assert that we got back the right chunks in terms of Z level startings
+                var zSequences = new List<long> { 16, 32 };
+                var chunks = chunksFound.Select(chunk => chunk.Item3).OrderBy(s => s);
+                Assert.AreEqual(2, chunks.Union(zSequences).Count());
+
+                // Assert we have the actual chunks.
+                Assert.That(chunksFound.ElementAt(0).Item4.Contains(4.0f));
+                Assert.That(chunksFound.ElementAt(1).Item4.Contains(8.0f));
+            }
+        }
     }
 
     [TestFixture]
@@ -179,6 +248,39 @@ namespace InfiniMap.Test
 
             Assert.That(map.Contains(4.0f));
             Assert.That(map.Contains(4.0f, new EqualityLambda<float>((a, b) => Math.Abs(a - b) < 0.001)));
+        }
+
+        [Test]
+        public void SupportsUnloadingOutsideArea()
+        {
+            var map = new Map2D<float>(16,16);
+            map[4, 4] = 2.0f;
+            map[63, 63] = 4.0f;
+
+            // Two chunks loaded
+            Assert.AreEqual((16*16)*2, map.Count);
+
+            map.UnloadAreaOutside(0, 0, 15, 15);
+
+            // Ony one chunk left
+            Assert.AreEqual((16*16), map.Count);
+
+            // Non-zero test
+
+            map[0, 0] = 2.0f;
+            map[16, 16] = 2.0f;
+            map[32, 32] = 4.0f;
+            map[48, 48] = 8.0f;
+            map[64, 64] = 16.0f;
+            map[80, 80] = 32.0f;
+            map[96, 96] = 64.0f;
+            map[128, 128] = 128.0f;
+
+            Assert.AreEqual((16*16)*8, map.Count);
+
+            map.UnloadAreaOutside(48, 48, 80, 80);
+
+            Assert.AreEqual((16*16)*3, map.Count);
         }
     }
 
