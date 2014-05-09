@@ -21,6 +21,13 @@ namespace InfiniMap
             get { return base[x, y]; }
             set { base[x, y] = value; }
         }
+
+        public new IEnumerable<Tuple<long, long, IEnumerable<T>>> ChunksWithin(long x0, long y0, long x1, long y1, bool createIfNull)
+        {
+            var result = base.ChunksWithin(x0, y0, x1, y1, createIfNull);
+            var chunks = result.Where(tuple => tuple.Item3 != null);
+            return chunks.Select(tuple => Tuple.Create(tuple.Item1, tuple.Item2, tuple.Item3.AsEnumerable()));
+        }
     }
 
     public class Map3D<T> : ChunkMap<T>
@@ -32,6 +39,13 @@ namespace InfiniMap
         public new IEnumerable<T> Within(long x0, long y0, long z0, long x1, long y1, long z1)
         {
             return base.Within(x0, y0, z0, x1, y1, z1);
+        }
+
+        public new IEnumerable<Tuple<long, long, long, IEnumerable<T>>> ChunksWithin(long x0, long y0, long z0, long x1, long y1, long z1, bool createIfNull)
+        {
+            var result = base.ChunksWithin(x0, y0, z0, x1, y1, z1, createIfNull);
+            var chunks = result.Where(tuple => tuple.Item4 != null);
+            return chunks.Select(tuple => Tuple.Create(tuple.Item1, tuple.Item2, tuple.Item3, tuple.Item4.AsEnumerable()));
         }
 
         public new T this[long x, long y, long z]
