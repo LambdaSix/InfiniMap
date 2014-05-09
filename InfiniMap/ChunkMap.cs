@@ -286,7 +286,7 @@ namespace InfiniMap
             chunk[x, y, z] = block;
         }
 
-        private class Chunk<U> : IEnumerable<U>
+        protected class Chunk<U> : IEnumerable<U>
         {
             private readonly int _chunkWidth;
             private readonly int _chunkHeight;
