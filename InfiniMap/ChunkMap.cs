@@ -99,7 +99,7 @@ namespace InfiniMap
         /// <remarks>
         /// The (x,y,z) are chunk-space, not world-space
         /// </remarks>
-        /// <returns>A 3-Tuple of (x,y,z,Chunk{T})</returns>
+        /// <returns>A 4-Tuple of (x,y,z,Chunk{T})</returns>
         protected IEnumerable<Tuple<long, long, long, Chunk<T>>> All()
         {
             return _map.Select(pair => Tuple.Create(pair.Key.Item1, pair.Key.Item2, pair.Key.Item3, pair.Value));
