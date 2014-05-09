@@ -43,10 +43,22 @@ namespace InfiniMap
             }
         }
 
+        /// <summary>
+        /// Return a list of chunk sized enumerations from the specified area.
+        /// </summary>
+        /// <param name="x0">Starting X co-ordinate</param>
+        /// <param name="y0">Starting Y co-ordinates</param>
+        /// <param name="x1">Ending X co-ordinates</param>
+        /// <param name="y1">Ending Y co-ordinates</param>
+        /// <param name="createIfNull">If true, give the user a chance to create chunks</param>
+        /// <returns>A list of chunk sized enumerations from a specified area as (x,y,IEnumerable{T}) in chunk-space co-ordinates</returns>
         public new IEnumerable<Tuple<long, long, IEnumerable<T>>> ChunksWithin(long x0, long y0, long x1, long y1, bool createIfNull)
         {
             var result = base.ChunksWithin(x0, y0, x1, y1, createIfNull);
-            var chunks = result.Where(tuple => tuple.Item3 != null);
+            var chunks = result.Select(s => {
+                                           var position = TranslateWorldToChunk(s.Item1, s.Item2, 0);
+                                           return Tuple.Create(position.Item1, position.Item2, s.Item3);
+                                       }).Where(tuple => tuple.Item3 != null);
             return chunks.Select(tuple => Tuple.Create(tuple.Item1, tuple.Item2, tuple.Item3.AsEnumerable()));
         }
     }
@@ -83,10 +95,25 @@ namespace InfiniMap
             }
         }
 
+        /// <summary>
+        /// Return a list of chunk sized enumerations from the specified area.
+        /// </summary>
+        /// <param name="x0">Starting X co-ordinate</param>
+        /// <param name="y0">Starting Y co-ordinate</param>
+        /// <param name="z0">Starting Z co-ordinate</param>
+        /// <param name="x1">Ending X co-ordinate</param>
+        /// <param name="y1">Ending Y co-ordinate</param>
+        /// <param name="z1">Ending Z co-ordinate</param>
+        /// <param name="createIfNull">If true, give the user a chance to create chunks</param>
+        /// <returns>A list of chunk sized enumerations from a specified area as (x,y,z,IEnumerable{T}) in chunk-space co-ordinates</returns>
         public new IEnumerable<Tuple<long, long, long, IEnumerable<T>>> ChunksWithin(long x0, long y0, long z0, long x1, long y1, long z1, bool createIfNull)
         {
             var result = base.ChunksWithin(x0, y0, z0, x1, y1, z1, createIfNull);
-            var chunks = result.Where(tuple => tuple.Item4 != null);
+            var chunks = result.Select(s => {
+                                           var position = TranslateWorldToChunk(s.Item1, s.Item2, s.Item3);
+                                           return Tuple.Create(position.Item1, position.Item2, position.Item3, s.Item4);
+                                       }).Where(tuple => tuple.Item4 != null);
+
             return chunks.Select(tuple => Tuple.Create(tuple.Item1, tuple.Item2, tuple.Item3, tuple.Item4.AsEnumerable()));
         }
 
