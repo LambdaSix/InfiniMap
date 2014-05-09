@@ -259,7 +259,35 @@ namespace InfiniMap.Test
         [Test]
         public void ChunkGathering()
         {
-            Assert.Fail("Test not written");
+            var map = new Map2D<float>(16, 16);
+
+            map[1, 1] = 2.0f;
+            map[63, 63] = 4.0f;
+            map[1, 127] = 8.0f;
+
+            // Assert we have 3 chunks in memory.
+            Assert.AreEqual((16 * 16) * 3, map.Count);
+
+            // A single chunk
+            {
+                var chunksFound = map.ChunksWithin(0, 0, 15, 15, createIfNull: false).ToList();
+                Assert.AreEqual(1, chunksFound.Count());
+                Assert.AreEqual(0, chunksFound.Select(s => s.Item1).First());
+
+                // Assert that it is the correct chunk
+                Assert.That(chunksFound.ElementAt(0).Item3.Contains(2.0f));
+            }
+
+            // Two chunks
+            {
+                var chunksFound = map.ChunksWithin(0, 0, 63, 63, createIfNull: false).ToList();
+                Assert.AreEqual(2, chunksFound.Count);
+                Assert.AreEqual(3, chunksFound.Select(s => s.Item1).ElementAt(1));
+                
+                // Assert that these are the correct chunks.
+                Assert.That(chunksFound.ElementAt(0).Item3.Contains(2.0f));
+                Assert.That(chunksFound.ElementAt(1).Item3.Contains(4.0f));
+            }
         }
 
         [Test]
