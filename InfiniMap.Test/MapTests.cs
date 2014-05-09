@@ -147,7 +147,7 @@ namespace InfiniMap.Test
                 var chunksFound = map.ChunksWithin(0, 0, 0, 15, 15, 33, createIfNull: false).ToList();
                 Assert.AreEqual(3, chunksFound.Count());
 
-                IEnumerable<long> zSequences = new List<long> { 0, 16, 32 };
+                IEnumerable<long> zSequences = new List<long> { 0, 1, 2 };
                 var chunks = chunksFound.Select(chunk => chunk.Item3).OrderBy(s => s);
                 Assert.AreEqual(3, chunks.Union(zSequences).Count());
                 
@@ -163,7 +163,7 @@ namespace InfiniMap.Test
                 Assert.AreEqual(2, chunksFound.Count());
 
                 // Assert that we got back the right chunks in terms of Z level startings
-                var zSequences = new List<long> { 16, 32 };
+                var zSequences = new List<long> { 1, 2 };
                 var chunks = chunksFound.Select(chunk => chunk.Item3).OrderBy(s => s);
                 Assert.AreEqual(2, chunks.Union(zSequences).Count());
 
