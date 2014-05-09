@@ -41,6 +41,26 @@ namespace InfiniMap
         }
     }
 
+    /// <summary>
+    /// An abstract base class for providing chunked item storage in a 3 dimension grid.
+    /// The user need not be intimately aware that the map is chunked.
+    /// </summary>
+    /// <remarks>
+    /// There are three co-ordinate systems in use, chunk, item, and world.
+    /// 
+    ///     Chunk-Space, A co-ordinate of a chunk among other chunks, the center of the world is chunk (0,0,0)
+    ///                 the chunk sitting on top of that to it would be (0,0,1)
+    /// 
+    ///     World-Space, A co-ordinate of an item among other items, the center of the world is (0,0,0) and
+    ///                 an item directly ontop of it would be (0,0,1). An item 63 tiles away on the Y plane would be
+    ///                 (0,63,1)
+    /// 
+    ///     Item-Space, A co-ordinate of an item inside a block, translated from world-space. The item at (worldspace) (0,0,1)
+    ///                 exists in the chunk space of (0,0,0) and the block space of (0,0,1).
+    ///                 An item at (63,0,0) in the world exists in chunkspace at (3,0,0) and itemspace of (15,0,0)
+    /// 
+    /// </remarks>
+    /// <typeparam name="T">Type of item to store in this collection</typeparam>
     public abstract class ChunkMap<T>
     {
         private readonly int _chunkHeight;
@@ -73,11 +93,26 @@ namespace InfiniMap
             set { Put(x, y ,z, value); }
         }
 
+        /// <summary>
+        /// Return all loaded chunks
+        /// </summary>
+        /// <remarks>
+        /// The (x,y,z) are chunk-space, not world-space
+        /// </remarks>
+        /// <returns>A 3-Tuple of (x,y,z,Chunk{T})</returns>
         protected IEnumerable<Tuple<long, long, long, Chunk<T>>> All()
         {
             return _map.Select(pair => Tuple.Create(pair.Key.Item1, pair.Key.Item2, pair.Key.Item3, pair.Value));
         }
 
+        /// <summary>
+        /// Return all loaded chunks given the predicate
+        /// </summary>
+        /// <remarks>
+        /// The returned (x,y,z) are chunk-space, not world-space
+        /// </remarks>
+        /// <param name="predicate">Filter function to apply</param>
+        /// <returns>A 4-Tuple of (x,y,z,Chunk{T}) filtered by the predicate function</returns>
         protected IEnumerable<Tuple<long, long, long, Chunk<T>>> All(Func<Tuple<long, long, long, Chunk<T>>, bool> predicate)
         {
              return All().Where(predicate);
