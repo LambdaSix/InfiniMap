@@ -73,6 +73,16 @@ namespace InfiniMap
             set { Put(x, y ,z, value); }
         }
 
+        protected IEnumerable<Tuple<long, long, long, Chunk<T>>> All()
+        {
+            return _map.Select(pair => Tuple.Create(pair.Key.Item1, pair.Key.Item2, pair.Key.Item3, pair.Value));
+        }
+
+        protected IEnumerable<Tuple<long, long, long, Chunk<T>>> All(Func<Tuple<long, long, long, Chunk<T>>, bool> predicate)
+        {
+             return All().Where(predicate);
+        }
+
         /// <summary>
         /// Start writing chunks to disk, calling <paramref name="writeFunc"/> for every chunk of blocks, with
         /// that chunk passed to the callback.
