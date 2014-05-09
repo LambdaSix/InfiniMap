@@ -356,9 +356,17 @@ namespace InfiniMap
             return Tuple.Create(xChunk, yChunk, zChunk);
         }
 
-        private void UnloadChunk(long x, long y, long z)
+        /// <summary>
+        /// Unload a chunk from the world by the given chunk-space co-ordinates
+        /// </summary>
+        /// <param name="x">Chunk X position</param>
+        /// <param name="y">Chunk Y position</param>
+        /// <param name="z">Chunk Z position</param>
+        protected void UnloadChunk(long x, long y, long z)
         {
-            WriteChunk(TranslateWorldToChunk(x, y, z), GetChunk(x, y, z));
+            var position = Tuple.Create(x, y, z);
+            WriteChunk(position, GetChunk(x, y, z, createIfNull: false));
+            _map.Remove(position);
         }
 
         private Chunk<T> GetChunk(long x, long y, long z)
