@@ -62,6 +62,27 @@ namespace InfiniMap
             return base.Within(x0, y0, z0, x1, y1, z1);
         }
 
+        public void UnloadArea(long x0, long y0, long z0, long x1, long y1, long z1 )
+        {
+            foreach (var chunk in base.ChunksWithin(x0, y0, y0, x1, y1, z1, createIfNull: false).Select(chunk => TranslateWorldToChunk(chunk.Item1, chunk.Item2, chunk.Item3)))
+            {
+                UnloadChunk(chunk.Item1, chunk.Item2, chunk.Item3);
+            }
+        }
+
+        public void UnloadAreaOutside(int x0, int y0, int z0, int x1, int y1, int z1)
+        {
+            var localChunks = base.ChunksWithin(x0, y0, z0, x1, y1, z1, createIfNull: false)
+                                .Select(tuple => TranslateWorldToChunk(tuple.Item1, tuple.Item2, tuple.Item3))
+                                .ToList();
+            var worldChunks = All(chunk => !localChunks.Contains(Tuple.Create(chunk.Item1, chunk.Item2, chunk.Item3))).ToList();
+
+            foreach (var chunk in worldChunks)
+            {
+                UnloadChunk(chunk.Item1, chunk.Item2, chunk.Item3);
+            }
+        }
+
         public new IEnumerable<Tuple<long, long, long, IEnumerable<T>>> ChunksWithin(long x0, long y0, long z0, long x1, long y1, long z1, bool createIfNull)
         {
             var result = base.ChunksWithin(x0, y0, z0, x1, y1, z1, createIfNull);
