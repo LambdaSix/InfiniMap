@@ -91,7 +91,7 @@ namespace InfiniMap
         }
 
         /// <summary>
-        /// Register a callback for writing of {T}.
+        /// Register a callback for writing of {T}. Replace any existing callback.
         /// </summary>
         /// <remarks>
         /// Like the Write function, the callback will be called when a chunk is to be saved to disk.
@@ -105,6 +105,14 @@ namespace InfiniMap
         }
 
         /// <summary>
+        /// Unregister the writer callback.
+        /// </summary>
+        public void UnregisterWriter()
+        {
+            _writerFunc = null;
+        }
+
+        /// <summary>
         /// Register a call back for reading chunks in when they aren't found in memory.
         /// Return an empty list to create a new empty chunk.
         /// </summary>
@@ -115,6 +123,14 @@ namespace InfiniMap
         public void RegisterReader(Func<Tuple<long,long,long>, IEnumerable<T>> readerFunc )
         {
             _readerFunc = readerFunc;
+        }
+
+        /// <summary>
+        /// Unregister the reader callback.
+        /// </summary>
+        public void UnregisterReader()
+        {
+            _readerFunc = null;
         }
 
         /// <summary>
