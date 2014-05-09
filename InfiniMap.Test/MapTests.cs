@@ -172,6 +172,12 @@ namespace InfiniMap.Test
                 Assert.That(chunksFound.ElementAt(1).Item4.Contains(8.0f));
             }
         }
+
+        [Test]
+        public void SupportsUnloadingOutsideArea()
+        {
+            Assert.Fail("Test not written");
+        }
     }
 
     [TestFixture]
@@ -253,13 +259,13 @@ namespace InfiniMap.Test
         [Test]
         public void ChunkGathering()
         {
-            
+            Assert.Fail("Test not written");
         }
 
         [Test]
         public void SupportsUnloading()
         {
-            
+            Assert.Fail("Test not written");
         }
 
         [Test]
