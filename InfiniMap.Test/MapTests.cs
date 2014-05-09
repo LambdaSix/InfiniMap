@@ -251,6 +251,18 @@ namespace InfiniMap.Test
         }
 
         [Test]
+        public void ChunkGathering()
+        {
+            
+        }
+
+        [Test]
+        public void SupportsUnloading()
+        {
+            
+        }
+
+        [Test]
         public void SupportsUnloadingOutsideArea()
         {
             var map = new Map2D<float>(16,16);
