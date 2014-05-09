@@ -369,7 +369,7 @@ namespace InfiniMap
             _map.Remove(position);
         }
 
-        private Chunk<T> GetChunk(long x, long y, long z)
+        private Chunk<T> GetChunk(long x, long y, long z, bool createIfNull)
         {
             var coordinates = TranslateWorldToChunk(x, y, z);
 
@@ -383,6 +383,11 @@ namespace InfiniMap
                 }
             }
 
+            if (!createIfNull)
+            {
+                return null;
+            }
+
             var newChunk = ReadChunk(coordinates);
             _map.Add(coordinates, newChunk);
             return newChunk;
@@ -390,12 +395,12 @@ namespace InfiniMap
 
         protected T Get(long x, long y, long z)
         {
-            return GetChunk(x, y, z)[x, y, z];
+            return GetChunk(x, y, z, createIfNull: true)[x, y, z];
         }
 
         protected void Put(long x, long y, long z, T block)
         {
-            var chunk = GetChunk(x, y, z);
+            var chunk = GetChunk(x, y, z, createIfNull: true);
             chunk[x, y, z] = block;
         }
 
