@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("InfiniMap.Test")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("PPF")]
+[assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("InfiniMap.Test")]
-[assembly: AssemblyCopyright("Copyright © PPF 2014")]
+[assembly: AssemblyCopyright("")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
