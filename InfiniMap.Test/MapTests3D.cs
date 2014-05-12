@@ -5,6 +5,54 @@ using NUnit.Framework;
 
 namespace InfiniMap.Test
 {
+
+    [TestFixture]
+    public class MapTestsSerialization3D
+    {
+        [Test]
+        public void RegisterSerializer()
+        {
+            var map = new Map3D<float>();
+
+            map[0, 0, 0] = 1.0f;        // Chunk: (0,0,0)
+            map[16, 16, 16] = 2.0f;     // Chunk: (1,1,1)
+            map[32, 32, 32] = 4.0f;     // Chunk: (2,2,2)
+
+            var list = new List<Tuple<long, long, long>>();
+
+            map.RegisterWriter((xyz, tuple) => {
+                                   Console.WriteLine("Writing: ({0},{1},{2})", tuple.Item1, tuple.Item2, tuple.Item3);
+                                   list.Add(tuple);
+                               });
+
+            map.UnloadArea(0, 0, 0, 32, 32, 32);
+
+            Assert.AreEqual(3, list.Count);
+
+            Assert.That(list.Contains(Tuple.Create(0L, 0L, 0L)));
+            Assert.That(list.Contains(Tuple.Create(1L, 1L, 1L)));
+            Assert.That(list.Contains(Tuple.Create(2L, 2L, 2L)));
+        }
+
+        [Test]
+        public void RegisterDeserializer()
+        {
+            var map = new Map3D<float>();
+            int i = 0;
+
+            map.RegisterReader(tuple => {
+                                   i++;
+                                   return Enumerable.Empty<float>();
+                               });
+
+            map[0, 0, 0] = 1.0f;        // Chunk: (0,0,0)
+            map[16, 16, 16] = 2.0f;     // Chunk: (1,1,1)
+            map[32, 32, 32] = 4.0f;     // Chunk: (2,2,2)
+
+            Assert.AreEqual(3,i);
+        }
+    }
+
     [TestFixture]
     public class MapTests3D
     {
