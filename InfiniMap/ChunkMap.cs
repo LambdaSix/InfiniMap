@@ -21,6 +21,46 @@ namespace InfiniMap
             get { return base[x, y]; }
             set { base[x, y] = value; }
         }
+
+        public void UnloadArea(int x0, int y0, int x1, int y1)
+        {
+            foreach (var position in base.ChunksWithin(x0, y0, x1, y1, createIfNull: false).Select(chunk => TranslateWorldToChunk(chunk.Item1, chunk.Item2, 0)))
+            {
+                UnloadChunk(position.Item1, position.Item2, 0);
+            }
+        }
+
+        public void UnloadAreaOutside(int x0, int y0, int x1, int y1)
+        {
+            var localChunks = base.ChunksWithin(x0, y0, x1, y1, createIfNull: false)
+                                .Select(tuple => TranslateWorldToChunk(tuple.Item1, tuple.Item2, 0))
+                                .ToList();
+            var worldChunks = All(chunk => !localChunks.Contains(Tuple.Create(chunk.Item1, chunk.Item2, chunk.Item3))).ToList();
+
+            foreach (var chunk in worldChunks)
+            {
+                UnloadChunk(chunk.Item1, chunk.Item2, chunk.Item3);
+            }
+        }
+
+        /// <summary>
+        /// Return a list of chunk sized enumerations from the specified area.
+        /// </summary>
+        /// <param name="x0">Starting X co-ordinate</param>
+        /// <param name="y0">Starting Y co-ordinates</param>
+        /// <param name="x1">Ending X co-ordinates</param>
+        /// <param name="y1">Ending Y co-ordinates</param>
+        /// <param name="createIfNull">If true, give the user a chance to create chunks</param>
+        /// <returns>A list of chunk sized enumerations from a specified area as (x,y,IEnumerable{T}) in chunk-space co-ordinates</returns>
+        public new IEnumerable<Tuple<long, long, IEnumerable<T>>> ChunksWithin(long x0, long y0, long x1, long y1, bool createIfNull)
+        {
+            var result = base.ChunksWithin(x0, y0, x1, y1, createIfNull);
+            var chunks = result.Select(s => {
+                                           var position = TranslateWorldToChunk(s.Item1, s.Item2, 0);
+                                           return Tuple.Create(position.Item1, position.Item2, s.Item3);
+                                       }).Where(tuple => tuple.Item3 != null);
+            return chunks.Select(tuple => Tuple.Create(tuple.Item1, tuple.Item2, tuple.Item3.AsEnumerable()));
+        }
     }
 
     public class Map3D<T> : ChunkMap<T>
@@ -34,6 +74,49 @@ namespace InfiniMap
             return base.Within(x0, y0, z0, x1, y1, z1);
         }
 
+        public void UnloadArea(long x0, long y0, long z0, long x1, long y1, long z1 )
+        {
+            foreach (var chunk in base.ChunksWithin(x0, y0, y0, x1, y1, z1, createIfNull: false).Select(chunk => TranslateWorldToChunk(chunk.Item1, chunk.Item2, chunk.Item3)))
+            {
+                UnloadChunk(chunk.Item1, chunk.Item2, chunk.Item3);
+            }
+        }
+
+        public void UnloadAreaOutside(int x0, int y0, int z0, int x1, int y1, int z1)
+        {
+            var localChunks = base.ChunksWithin(x0, y0, z0, x1, y1, z1, createIfNull: false)
+                                .Select(tuple => TranslateWorldToChunk(tuple.Item1, tuple.Item2, tuple.Item3))
+                                .ToList();
+            var worldChunks = All(chunk => !localChunks.Contains(Tuple.Create(chunk.Item1, chunk.Item2, chunk.Item3))).ToList();
+
+            foreach (var chunk in worldChunks)
+            {
+                UnloadChunk(chunk.Item1, chunk.Item2, chunk.Item3);
+            }
+        }
+
+        /// <summary>
+        /// Return a list of chunk sized enumerations from the specified area.
+        /// </summary>
+        /// <param name="x0">Starting X co-ordinate</param>
+        /// <param name="y0">Starting Y co-ordinate</param>
+        /// <param name="z0">Starting Z co-ordinate</param>
+        /// <param name="x1">Ending X co-ordinate</param>
+        /// <param name="y1">Ending Y co-ordinate</param>
+        /// <param name="z1">Ending Z co-ordinate</param>
+        /// <param name="createIfNull">If true, give the user a chance to create chunks</param>
+        /// <returns>A list of chunk sized enumerations from a specified area as (x,y,z,IEnumerable{T}) in chunk-space co-ordinates</returns>
+        public new IEnumerable<Tuple<long, long, long, IEnumerable<T>>> ChunksWithin(long x0, long y0, long z0, long x1, long y1, long z1, bool createIfNull)
+        {
+            var result = base.ChunksWithin(x0, y0, z0, x1, y1, z1, createIfNull);
+            var chunks = result.Select(s => {
+                                           var position = TranslateWorldToChunk(s.Item1, s.Item2, s.Item3);
+                                           return Tuple.Create(position.Item1, position.Item2, position.Item3, s.Item4);
+                                       }).Where(tuple => tuple.Item4 != null);
+
+            return chunks.Select(tuple => Tuple.Create(tuple.Item1, tuple.Item2, tuple.Item3, tuple.Item4.AsEnumerable()));
+        }
+
         public new T this[long x, long y, long z]
         {
             get { return base[x, y, z]; }
@@ -41,12 +124,35 @@ namespace InfiniMap
         }
     }
 
+    /// <summary>
+    /// An abstract base class for providing chunked item storage in a 3 dimension grid.
+    /// The user need not be intimately aware that the map is chunked.
+    /// </summary>
+    /// <remarks>
+    /// There are three co-ordinate systems in use, chunk, item, and world.
+    /// 
+    ///     Chunk-Space, A co-ordinate of a chunk among other chunks, the center of the world is chunk (0,0,0)
+    ///                 the chunk sitting on top of that to it would be (0,0,1)
+    /// 
+    ///     World-Space, A co-ordinate of an item among other items, the center of the world is (0,0,0) and
+    ///                 an item directly ontop of it would be (0,0,1). An item 63 tiles away on the Y plane would be
+    ///                 (0,63,1)
+    /// 
+    ///     Item-Space, A co-ordinate of an item inside a block, translated from world-space. The item at (worldspace) (0,0,1)
+    ///                 exists in the chunk space of (0,0,0) and the block space of (0,0,1).
+    ///                 An item at (63,0,0) in the world exists in chunkspace at (3,0,0) and itemspace of (15,0,0)
+    /// 
+    /// </remarks>
+    /// <typeparam name="T">Type of item to store in this collection</typeparam>
     public abstract class ChunkMap<T>
     {
         private readonly int _chunkHeight;
         private readonly int _chunkWidth;
         private readonly int _chunkDepth;
         private readonly Dictionary<Tuple<long, long, long>, Chunk<T>> _map;
+
+        private Action<IEnumerable<T>, Tuple<long, long, long>> _writerFunc;
+        private Func<Tuple<long, long, long>, IEnumerable<T>> _readerFunc; 
 
         public ChunkMap(int chunkHeight, int chunkWidth, int chunkDepth)
         {
@@ -68,6 +174,127 @@ namespace InfiniMap
         {
             get { return Get(x, y, z); }
             set { Put(x, y ,z, value); }
+        }
+
+        /// <summary>
+        /// Return all loaded chunks
+        /// </summary>
+        /// <remarks>
+        /// The (x,y,z) are chunk-space, not world-space
+        /// </remarks>
+        /// <returns>A 4-Tuple of (x,y,z,Chunk{T})</returns>
+        protected IEnumerable<Tuple<long, long, long, Chunk<T>>> All()
+        {
+            return _map.Select(pair => Tuple.Create(pair.Key.Item1, pair.Key.Item2, pair.Key.Item3, pair.Value));
+        }
+
+        /// <summary>
+        /// Return all loaded chunks given the predicate
+        /// </summary>
+        /// <remarks>
+        /// The returned (x,y,z) are chunk-space, not world-space
+        /// </remarks>
+        /// <param name="predicate">Filter function to apply</param>
+        /// <returns>A 4-Tuple of (x,y,z,Chunk{T}) filtered by the predicate function</returns>
+        protected IEnumerable<Tuple<long, long, long, Chunk<T>>> All(Func<Tuple<long, long, long, Chunk<T>>, bool> predicate)
+        {
+             return All().Where(predicate);
+        }
+
+        /// <summary>
+        /// Start writing chunks to disk, calling <paramref name="writeFunc"/> for every chunk of blocks, with
+        /// that chunk passed to the callback.
+        /// </summary>
+        /// <remarks>
+        /// <paramref name="writeFunc"/> will be called once for every chunk in memory, it gets passed
+        /// a chunks worth of {T} each time, along with the chunk co-ordinates as an 3-tuple of (x,y,z)
+        /// </remarks>
+        /// <param name="writeFunc">Serialization function to use</param>
+        public void Write(Action<IEnumerable<T>, Tuple<long,long,long>> writeFunc)
+        {
+            foreach (var chunk in _map)
+            {
+                writeFunc(chunk.Value.AsEnumerable(), chunk.Key);
+            }
+        }
+
+        /// <summary>
+        /// Register a callback for writing of {T}. Replace any existing callback.
+        /// </summary>
+        /// <remarks>
+        /// Like the Write function, the callback will be called when a chunk is to be saved to disk.
+        /// This is normally when the chunk is about to be unloaded from memory, giving the application
+        /// a chance to persist the chunk to disk.
+        /// </remarks>
+        /// <param name="writerFunc">Serialization function use - (chunkData, (x,y,z))</param>
+        public void RegisterWriter(Action<IEnumerable<T>, Tuple<long,long,long>> writerFunc)
+        {
+            _writerFunc = writerFunc;
+        }
+
+        /// <summary>
+        /// Unregister the writer callback.
+        /// </summary>
+        public void UnregisterWriter()
+        {
+            _writerFunc = null;
+        }
+
+        /// <summary>
+        /// Register a call back for reading chunks in when they aren't found in memory.
+        /// Return an empty list to create a new empty chunk.
+        /// </summary>
+        /// <remarks>
+        /// The 
+        /// </remarks>
+        /// <param name="readerFunc"></param>
+        public void RegisterReader(Func<Tuple<long,long,long>, IEnumerable<T>> readerFunc )
+        {
+            _readerFunc = readerFunc;
+        }
+
+        /// <summary>
+        /// Unregister the reader callback.
+        /// </summary>
+        public void UnregisterReader()
+        {
+            _readerFunc = null;
+        }
+
+        /// <summary>
+        /// Read a chunk using the reader function, or a blank block.
+        /// </summary>
+        /// <param name="coordinates">3-Tuple of co-ordinates of chunk to read</param>
+        /// <returns>Chunk filled with T</returns>
+        private Chunk<T> ReadChunk(Tuple<long,long,long> coordinates)
+        {
+            if (_readerFunc != null)
+            {
+                var items = _readerFunc(coordinates).ToList();
+
+                if (items.Count() > (_chunkHeight*_chunkWidth*_chunkDepth))
+                {
+                    throw new NotSupportedException("Attempted to load a item block larger than this Maps chunk dimensions");
+                }
+
+                return new Chunk<T>(_chunkHeight, _chunkWidth, _chunkDepth, items);
+            }
+
+            // Without a reader function, just return a blank chunk.
+            return new Chunk<T>(_chunkHeight, _chunkDepth, _chunkWidth);
+        }
+
+        /// <summary>
+        /// Write a chunk using the write function, if defined.
+        /// </summary>
+        /// <param name="coordinates">3-Tuple of co-ordinates of the chunk to write</param>
+        /// <param name="chunk">The chunk to write</param>
+        private void WriteChunk(Tuple<long, long, long> coordinates, Chunk<T> chunk)
+        {
+            if (_writerFunc != null)
+            {
+                _writerFunc(chunk, coordinates);
+            }
         }
 
         public bool Contains(T item)
@@ -99,48 +326,173 @@ namespace InfiniMap
             }
         }
 
-        private Chunk<T> GetChunk(long x, long y, long z)
+        /// <summary>
+        /// Return all chunks within a given 2D world-space region.
+        /// If <paramref name="createIfNull"/> is true, then all returned regions will be initialized to some value or
+        /// possibly generated by user-callbacks.
+        /// If <paramref name="createIfNull"/> is false, then any chunks not currently in memory will be returned as null, no
+        /// attempt to generate or load the chunks with user-callbacks is made.
+        /// </summary>
+        /// <param name="x0">Starting X position</param>
+        /// <param name="y0">Starting Y position</param>
+        /// <param name="x1">Ending X position</param>
+        /// <param name="y1">Ending Y position</param>
+        /// <param name="createIfNull">If false, do not create new chunks when a chunk is not currently loaded into memory</param>
+        /// <returns>
+        /// A list of 3-Tuples, containing the starting coordinates of the chunk, plus the chunk itself
+        /// as: (x,y,Chunk{T})
+        /// </returns>
+        protected virtual IEnumerable<Tuple<long, long, Chunk<T>>> ChunksWithin(long x0, long y0, long x1, long y1, bool createIfNull)
+        { 
+            return ChunksWithin(x0, y0, 0, x1, y1, 0, createIfNull).Select(quad => Tuple.Create(quad.Item1, quad.Item2, quad.Item4));
+        }
+
+        /// <summary>
+        /// Returns all chunks within a given 3D world-space region.
+        /// If <paramref name="createIfNull"/> is true, then all returned regions will be initialized to some value or
+        /// possibly generated by user-callbacks.
+        /// If <paramref name="createIfNull"/> is false, then any chunks not currently in memory will be returned as null, no
+        /// attempt to generate or load the chunks with user-callbacks is made.
+        /// </summary>
+        /// <param name="x0">Starting X position</param>
+        /// <param name="y0">Starting Y position</param>
+        /// <param name="z0">Starting Z position</param>
+        /// <param name="x1">Ending X position</param>
+        /// <param name="y1">Ending Y position</param>
+        /// <param name="z1">Ending Z position</param>
+        /// <param name="createIfNull">If false, do not create new chunks when a chunk is not currently loaded into memory</param>
+        /// <returns>
+        /// A list of 4-Tuples, containing the starting coordinates of the chunk, plus the chunk itself
+        /// as: (x,y,z,Chunk{T})
+        /// </returns>
+        protected virtual IEnumerable<Tuple<long, long, long, Chunk<T>>> ChunksWithin(long x0, long y0, long z0, long x1, long y1,
+                                                                                      long z1, bool createIfNull)
         {
-            var xChunk = (long) Math.Floor(x/(float) _chunkHeight);
-            var yChunk = (long) Math.Floor(y/(float) _chunkWidth);
-            var zChunk = (long) Math.Floor(z/(float) _chunkDepth);
+            var xPoints = new List<long>();
+            var yPoints = new List<long>();
+            var zPoints = new List<long>();
+
+            var xChunkLength = ((Math.Abs(x1) - Math.Abs(x0))/_chunkWidth) + 1;
+            var yChunkLength = ((Math.Abs(y1) - Math.Abs(y0))/_chunkHeight) + 1;
+            var zChunkLength = ((Math.Abs(z1) - Math.Abs(z0))/_chunkDepth) + 1;
+
+            for (int i = 0; i < xChunkLength; i++)
+            {
+                var x = (x0 + (_chunkWidth*i));
+                xPoints.Add(x);
+            }
+
+            for (int i = 0; i < yChunkLength; i++)
+            {
+                var y = (y0 + (_chunkHeight*i));
+                yPoints.Add(y);
+            }
+
+            for (int i = 0; i < zChunkLength; i++)
+            {
+                var z = (z0 + (_chunkDepth*i));
+                zPoints.Add(z);
+            }
+
+            var xyPoints = xPoints.Zip(yPoints, (x, y) => new {x, y}).ToList();
+
+            IEnumerable<Tuple<long, long, long>> xyzPoints = Enumerable.Empty<Tuple<long, long, long>>();
+
+            if (xyPoints.Count > zPoints.Count)
+            {
+                // Special-case, probably a 2D slice, so we want to zip along the length of the xyPoints, not zPoints
+                xyzPoints = xyPoints.Select((pair, i) => Tuple.Create(pair.x, pair.y, zPoints.ElementAtOrDefault(i)));
+            }
+            else
+            {
+                xyzPoints = zPoints.Select((z, i) =>
+                                           Tuple.Create(
+                                               xyPoints.ElementAtOrDefault(i) == null ? 0 : xyPoints.ElementAt(i).x,
+                                               xyPoints.ElementAtOrDefault(i) == null ? 0 : xyPoints.ElementAt(i).y,
+                                               z));
+            }
+
+            // var xyzPoints = xyPoints.Select((pair, i) => new {pair.x, pair.y, z = zPoints.ElementAtOrDefault(i)});
+
+            return xyzPoints.Select(point => Tuple.Create(point.Item1, point.Item2, point.Item3, GetChunk(point.Item1, point.Item2, point.Item3, createIfNull)));
+        }
+
+        protected Tuple<long,long,long> TranslateWorldToChunk(long x, long y, long z)
+        {
+            var xChunk = (long)Math.Floor(x / (float)_chunkHeight);
+            var yChunk = (long)Math.Floor(y / (float)_chunkWidth);
+            var zChunk = (long)Math.Floor(z / (float)_chunkDepth);
+            return Tuple.Create(xChunk, yChunk, zChunk);
+        }
+
+        /// <summary>
+        /// Unload a chunk from the world by the given chunk-space co-ordinates
+        /// </summary>
+        /// <param name="x">Chunk X position</param>
+        /// <param name="y">Chunk Y position</param>
+        /// <param name="z">Chunk Z position</param>
+        protected void UnloadChunk(long x, long y, long z)
+        {
+            var position = Tuple.Create(x, y, z);
+            WriteChunk(position, GetChunk(x, y, z, createIfNull: false));
+            _map.Remove(position);
+        }
+
+        private Chunk<T> GetChunk(long x, long y, long z, bool createIfNull)
+        {
+            var coordinates = TranslateWorldToChunk(x, y, z);
 
             // Scope chunk to here.
             {
                 Chunk<T> chunk;
-                var foundChunk = _map.TryGetValue(Tuple.Create(xChunk, yChunk, zChunk), out chunk);
+                var foundChunk = _map.TryGetValue(coordinates, out chunk);
                 if (foundChunk)
                 {
                     return chunk;
                 }
             }
 
-            var newChunk = new Chunk<T>(_chunkHeight, _chunkWidth, _chunkDepth);
-            _map.Add(Tuple.Create(xChunk, yChunk, zChunk), newChunk);
+            if (!createIfNull)
+            {
+                return null;
+            }
+
+            var newChunk = ReadChunk(coordinates);
+            _map.Add(coordinates, newChunk);
             return newChunk;
         }
 
         protected T Get(long x, long y, long z)
         {
-            return GetChunk(x, y, z)[x, y, z];
+            return GetChunk(x, y, z, createIfNull: true)[x, y, z];
         }
 
         protected void Put(long x, long y, long z, T block)
         {
-            var chunk = GetChunk(x, y, z);
+            var chunk = GetChunk(x, y, z, createIfNull: true);
             chunk[x, y, z] = block;
         }
 
-        private class Chunk<U> : IEnumerable<U>
+        protected class Chunk<U> : IEnumerable<U>
         {
             private readonly int _chunkWidth;
             private readonly int _chunkHeight;
             private readonly int _chunkDepth;
             private readonly U[] _blocks;
 
-            public Chunk() : this(16,16,1) { }
-
-            public Chunk(int chunkHeight, int chunkWidth) : this(chunkHeight, chunkWidth, 1) {}
+            public Chunk(int chunkHeight, int chunkWidth, int chunkDepth, IEnumerable<U> items)
+                : this(chunkHeight,chunkWidth,chunkDepth)
+            {
+                var array = items.ToArray();
+                if (array.Any())
+                {
+                    _blocks = array;
+                }
+                else
+                {
+                    _blocks = new U[chunkHeight*chunkWidth*chunkDepth];
+                }
+            }
 
             public Chunk(int chunkHeight, int chunkWidth, int chunkDepth)
             {
