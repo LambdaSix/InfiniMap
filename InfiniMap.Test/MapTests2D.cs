@@ -1,9 +1,72 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 
 namespace InfiniMap.Test
 {
+    [TestFixture]
+    public class MapTestsSerialization2D
+    {
+        [Test]
+        public void MapSerializer()
+        {
+            var map = new Map2D<float>();
+
+            map[0, 0] = 1.0f;        // Chunk: (0,0,0)
+            map[16, 16] = 2.0f;     // Chunk: (1,1,1)
+            map[32, 32] = 4.0f;     // Chunk: (2,2,2)
+
+            var list = new List<Tuple<long, long, long>>();
+
+            map.RegisterWriter((xyz, tuple) =>
+            {
+                Console.WriteLine("Writing: ({0},{1},{2})", tuple.Item1, tuple.Item2, tuple.Item3);
+                list.Add(tuple);
+            });
+
+            map.UnloadArea(0, 0, 32, 32);
+
+            Assert.AreEqual(3, list.Count);
+
+            Assert.That(list.Contains(Tuple.Create(0L, 0L, 0L)));
+            Assert.That(list.Contains(Tuple.Create(1L, 1L, 0L)));
+            Assert.That(list.Contains(Tuple.Create(2L, 2L, 0L)));
+
+            map.UnregisterWriter();
+            map[48, 48] = 4.0f;
+
+            map.UnloadArea(0, 0, 48, 48);
+            Assert.AreEqual(3, list.Count);
+        }
+
+        [Test]
+        public void MapDeserializer()
+        {
+            var map = new Map2D<float>();
+            int i = 0;
+
+            // Assert that the Reader function is called for each new chunk loaded into memory
+            map.RegisterReader(tuple =>
+            {
+                i++;
+                return Enumerable.Empty<float>();
+            });
+
+            map[0, 0] = 1.0f;        // Chunk: (0,0,0)
+            map[16, 16] = 2.0f;      // Chunk: (1,1,0)
+            map[32, 32] = 4.0f;      // Chunk: (2,2,0)
+
+            Assert.AreEqual(3, i);
+
+            map.UnregisterReader();
+            map[48, 48] = 8.0f;
+
+            // Assert that after unregistering, the callback is not invoked.
+            Assert.AreEqual(3, i);
+        }
+    }
+
     [TestFixture]
     public class MapTests2D
     {
