@@ -10,7 +10,7 @@ namespace InfiniMap.Test
     public class MapTestsSerialization3D
     {
         [Test]
-        public void RegisterSerializer()
+        public void MapSerializer()
         {
             var map = new Map3D<float>();
 
@@ -32,14 +32,21 @@ namespace InfiniMap.Test
             Assert.That(list.Contains(Tuple.Create(0L, 0L, 0L)));
             Assert.That(list.Contains(Tuple.Create(1L, 1L, 1L)));
             Assert.That(list.Contains(Tuple.Create(2L, 2L, 2L)));
+
+            map.UnregisterWriter();
+            map[48, 48, 48] = 4.0f;
+            
+            map.UnloadArea(0, 0, 0, 48, 48, 48);
+            Assert.AreEqual(3, list.Count);
         }
 
         [Test]
-        public void RegisterDeserializer()
+        public void MapDeserializer()
         {
             var map = new Map3D<float>();
             int i = 0;
 
+            // Assert that the Reader function is called for each new chunk loaded into memory
             map.RegisterReader(tuple => {
                                    i++;
                                    return Enumerable.Empty<float>();
@@ -49,7 +56,13 @@ namespace InfiniMap.Test
             map[16, 16, 16] = 2.0f;     // Chunk: (1,1,1)
             map[32, 32, 32] = 4.0f;     // Chunk: (2,2,2)
 
-            Assert.AreEqual(3,i);
+            Assert.AreEqual(3, i);
+
+            map.UnregisterReader();
+            map[48, 48, 48] = 8.0f;
+
+            // Assert that after unregistering, the callback is not invoked.
+            Assert.AreEqual(3, i);
         }
     }
 
