@@ -176,7 +176,34 @@ namespace InfiniMap.Test
         [Test]
         public void SupportsUnloadingOutsideArea()
         {
-            Assert.Fail("Test not written");
+            var map = new Map3D<float>(16, 16, 16);
+            map[4, 4, 0] = 2.0f;
+            map[63, 63, 0] = 4.0f;
+
+            // Two chunks loaded
+            Assert.AreEqual((16 * 16 * 16) * 2, map.Count);
+
+            map.UnloadAreaOutside(0, 0, 0, 15, 15, 0);
+
+            // Ony one chunk left
+            Assert.AreEqual((16 * 16 * 16), map.Count);
+
+            // Non-zero test
+
+            map[0, 0, 0] = 2.0f;
+            map[16, 16, 0] = 2.0f;
+            map[32, 32, 0] = 4.0f;
+            map[48, 48, 7] = 8.0f;
+            map[64, 64, 15] = 16.0f;
+            map[80, 80, 15] = 32.0f;
+            map[96, 96, 0] = 64.0f;
+            map[128, 128, 0] = 128.0f;
+
+            Assert.AreEqual((16 * 16 * 16) * 8, map.Count);
+
+            map.UnloadAreaOutside(48, 48, 0, 80, 80, 15);
+
+            Assert.AreEqual((16 * 16 * 16) * 3, map.Count);
         }
     }
 
@@ -293,7 +320,17 @@ namespace InfiniMap.Test
         [Test]
         public void SupportsUnloading()
         {
-            Assert.Fail("Test not written");
+            var map = new Map2D<float>();
+
+            map[0, 0] = 2.0f;
+            map[16, 16] = 2.0f;
+            map[33, 33] = 4.0f;
+
+            Assert.AreEqual((16 * 16) * 3, map.Count);
+
+            map.UnloadArea(0, 0, 33, 33);
+
+            Assert.AreEqual(0, map.Count);
         }
 
         [Test]
