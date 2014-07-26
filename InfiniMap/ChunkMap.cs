@@ -281,7 +281,7 @@ namespace InfiniMap
             }
 
             // Without a reader function, just return a blank chunk.
-            return new Chunk<T>(_chunkHeight, _chunkDepth, _chunkWidth);
+            return new Chunk<T>(_chunkHeight, _chunkWidth, _chunkDepth);
         }
 
         /// <summary>
