@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>InfiniMap</id>
+    <version>$version$</version>
+    <title>$version$</title>
+		<authors>LambdaSix</authors>
+    <owners>LambdaSix</owners>
+    <projectUrl>http://github.com/LambdaSix/InfiniMap</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Cubic chunked map library</description>
+    <copyright>Copyright LambdaSix 2014</copyright>
+  </metadata>
+</package>

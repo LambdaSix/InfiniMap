@@ -267,4 +267,108 @@ namespace InfiniMap.Test
             Assert.AreEqual((16 * 16 * 16) * 3, map.Count);
         }
     }
+
+    [TestFixture]
+    public class MapTestEntities3D
+    {
+        [Test]
+        public void SupportsAddingEntities()
+        {
+            var map = new Map3D<float>(16, 16, 16);
+
+            var oldBoot = new Entity { Name = "Old Boot" };
+
+            map.PutEntity(1, 1, 1, oldBoot);
+
+            Assert.That(map.GetEntitiesAt(1, 1, 1).Any());
+            Assert.That(oldBoot.X == 1 && oldBoot.Y == 1);
+        }
+
+        [Test]
+        public void SupportsQuantumEntanglementPrevention()
+        {
+            var map = new Map3D<float>(16, 16, 16);
+
+            var oldBoot = new Entity { Name = "Old Boot" };
+
+            map.PutEntity(1, 1, 1, oldBoot);
+
+            Assert.That(map.GetEntitiesAt(1, 1, 1).Any());
+            Assert.That(oldBoot.X == 1 && oldBoot.Y == 1);
+
+            // Put the boot somewhere else, moving it.
+            map.PutEntity(17, 17, 17, oldBoot);
+            oldBoot.Name = "Spooky Old Boot";
+
+            Assert.That(map.GetEntitiesAt(1, 1, 1).Any() == false);
+            Assert.That(map.GetEntitiesAt(17, 17, 17).Any());
+        }
+
+        [Test]
+        public void SupportsAddingAndRemovingEntities()
+        {
+            var map = new Map3D<float>(16, 16, 16);
+
+            var oldBoot = new Entity { Name = "Old Boot" };
+
+            map.PutEntity(1, 1, 1, oldBoot);
+
+            Assert.That(map.GetEntitiesAt(1, 1, 1).Any());
+            Assert.That(oldBoot.X == 1 && oldBoot.Y == 1);
+
+            map.RemoveEntity(oldBoot);
+            Assert.That(map.GetEntitiesAt(1, 1, 1).Any() == false);
+
+            // After removing, items have null co-ordinates.
+            Assert.That(oldBoot.X == null);
+            Assert.That(oldBoot.Y == null);
+            Assert.That(oldBoot.Z == null);
+        }
+
+        [Test]
+        public void SupportsGettingEntitiesInLocalArea()
+        {
+            var map = new Map3D<float>(16, 16, 16);
+
+            var oldBoot = new Entity { Name = "Old Boot" };
+            var oldCan = new Entity { Name = "Old Boot" };
+            var oldBucket = new Entity { Name = "Old Boot" };
+
+            map.PutEntity(1, 1, 1, oldBoot);
+            map.PutEntity(1, 1, 1, oldBucket);
+            map.PutEntity(1, 1, 1, oldCan);
+
+            Assert.That(map.GetEntitiesAt(1, 1, 1).Any());
+            Assert.That(oldBoot.X == 1 && oldBoot.Y == 1);
+
+            Assert.That(map.GetEntitiesInChunk(1, 1, 1).Count() == 3);
+        }
+
+        [Test]
+        public void SupportsAddingAndMovingEntities()
+        {
+            var map = new Map3D<float>(16, 16, 16);
+
+            var oldBoot = new Entity { Name = "Old Boot" };
+
+            map.PutEntity(1, 1, 1, oldBoot);
+
+            Assert.That(map.GetEntitiesAt(1, 1, 1).Any());
+            Assert.That(oldBoot.X == 1 && oldBoot.Y == 1);
+
+            map.PutEntity(17, 17, 17, oldBoot);
+            Assert.That(map.GetEntitiesAt(1, 1, 1).Any() == false);
+            Assert.That(map.GetEntitiesAt(17, 17, 17).Any());
+            Assert.That(oldBoot.X == 17 && oldBoot.Y == 17);
+        }
+
+        public class Entity : IEntityLocationData
+        {
+            public long? X { get; set; }
+            public long? Y { get; set; }
+            public long? Z { get; set; }
+
+            public string Name { get; set; }
+        }
+    }
 }

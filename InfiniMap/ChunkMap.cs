@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace InfiniMap
 {
-    public class Map2D<T> :ChunkMap<T>
+    public class Map2D<T> : ChunkMap<T>
     {
         public Map2D(int chunkHeight, int chunkWidth) : base(chunkHeight, chunkWidth, 1) {}
 
@@ -28,6 +28,40 @@ namespace InfiniMap
             {
                 UnloadChunk(position.Item1, position.Item2, 0);
             }
+        }
+
+        /// <summary>
+        /// Add the entity to the location specified.
+        /// Mutates the entities location data appropriately.
+        /// </summary>
+        /// <param name="x">World-space X co-ordinate</param>
+        /// <param name="y">world-space Y co-ordinate</param>
+        /// <param name="entity">Entity to relocate</param>
+        public void PutEntity(long x, long y, IEntityLocationData entity)
+        {
+            base.PutEntity(x, y, 0, entity);
+        }
+
+        /// <summary>
+        /// Returns all entities at the location.
+        /// </summary>
+        /// <param name="x">World-space X co-ordinate</param>
+        /// <param name="y">World-space Y co-ordinate</param>
+        /// <returns>A set of entities at that location</returns>
+        public IEnumerable<IEntityLocationData> GetEntitiesAt(long x, long y)
+        {
+            return base.GetEntitiesAt(x, y, 0);
+        }
+
+        /// <summary>
+        /// Returns all entities in the chunk containing the location
+        /// </summary>
+        /// <param name="x">World-space X co-ordinate</param>
+        /// <param name="y">World-space Y co-ordinate</param>
+        /// <returns>A set of entities in the same chunk as the co-ordinates</returns>
+        public IEnumerable<IEntityLocationData> GetEntitiesInChunk(long x, long y)
+        {
+            return base.GetEntitiesInChunk(x, y, 0);
         }
 
         public void UnloadAreaOutside(int x0, int y0, int x1, int y1)
@@ -462,6 +496,82 @@ namespace InfiniMap
             return newChunk;
         }
 
+        /// <summary>
+        /// Add the entity to the location specified.
+        /// If the entity exists in the world already, it moves it.
+        /// Mutates the entities location data appropriately.
+        /// </summary>
+        /// <param name="x">World-space X co-ordinate</param>
+        /// <param name="y">World-space Y co-ordinate</param>
+        /// <param name="z">World-space Z co-ordinate</param>
+        /// <param name="entity">Entity to relocate</param>
+        public virtual void PutEntity(long x, long y, long z, IEntityLocationData entity)
+        {
+            // This item exists somewhere else, move it instead.
+            if (entity.X != null && entity.Y != null && entity.Z != null)
+            {
+                MoveEntity(x, y, z, entity);
+            }
+
+            var chunk = GetChunk(x, y, z, createIfNull: true);
+
+            entity.X = x;
+            entity.Y = y;
+            entity.Z = z;
+            chunk.PutEntity(entity);
+        }
+
+        /// <summary>
+        /// Move an entity from one location to another.
+        /// This observes re-ordering in chunks.
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="z"></param>
+        /// <param name="entity"></param>
+        private void MoveEntity(long x, long y, long z, IEntityLocationData entity)
+        {
+            var oldChunk = GetChunk(entity.X.Value, entity.Y.Value, entity.Z.Value, createIfNull: true);
+            oldChunk.RemoveEntity(entity);
+
+            var newChunk = GetChunk(x, y, z, createIfNull: true);
+            entity.X = x;
+            entity.Y = y;
+            entity.Z = z;
+
+            newChunk.PutEntity(entity);
+        }
+
+        /// <summary>
+        /// Returns all entities
+        /// </summary>
+        /// <param name="x"></param>
+        /// <param name="y"></param>
+        /// <param name="z"></param>
+        /// <returns></returns>
+        public virtual IEnumerable<IEntityLocationData> GetEntitiesInChunk(long x, long y, long z)
+        {
+            var chunk = GetChunk(x, y, z, createIfNull: true);
+            return chunk.GetEntities();
+        }
+
+        public virtual IEnumerable<IEntityLocationData> GetEntitiesAt(long x, long y, long z)
+        {
+            var chunk = GetChunk(x, y, z, createIfNull: true);
+            return chunk.GetEntitiesAt(x, y, z);
+        } 
+
+        /// <summary>
+        /// Remove an entity from the chunk it resides in currently
+        /// </summary>
+        /// <param name="entity">Entity to remove</param>
+        public virtual void RemoveEntity(IEntityLocationData entity)
+        {
+            var chunk = GetChunk(entity.X.Value, entity.Y.Value, entity.Z.Value, createIfNull: true);
+
+            chunk.RemoveEntity(entity);
+        }
+
         protected T Get(long x, long y, long z)
         {
             return GetChunk(x, y, z, createIfNull: true)[x, y, z];
@@ -479,19 +589,14 @@ namespace InfiniMap
             private readonly int _chunkHeight;
             private readonly int _chunkDepth;
             private readonly U[] _blocks;
+            private readonly HashSet<IEntityLocationData> _items;
 
             public Chunk(int chunkHeight, int chunkWidth, int chunkDepth, IEnumerable<U> items)
-                : this(chunkHeight,chunkWidth,chunkDepth)
+                : this(chunkHeight, chunkWidth, chunkDepth)
             {
                 var array = items.ToArray();
-                if (array.Any())
-                {
-                    _blocks = array;
-                }
-                else
-                {
-                    _blocks = new U[chunkHeight*chunkWidth*chunkDepth];
-                }
+                _blocks = array.Any() ? array : new U[chunkHeight * chunkWidth * chunkDepth];
+                _items = new HashSet<IEntityLocationData>();
             }
 
             public Chunk(int chunkHeight, int chunkWidth, int chunkDepth)
@@ -499,7 +604,31 @@ namespace InfiniMap
                 _chunkWidth = chunkWidth;
                 _chunkHeight = chunkHeight;
                 _chunkDepth = chunkDepth;
-                _blocks = new U[chunkHeight*chunkWidth*chunkDepth];
+                _blocks = new U[chunkHeight * chunkWidth * chunkDepth];
+                _items = new HashSet<IEntityLocationData>();
+            }
+
+            public IEnumerable<IEntityLocationData> GetEntities()
+            {
+                return _items;
+            }
+
+            public void PutEntity(IEntityLocationData entity)
+            {
+                _items.Add(entity);
+            }
+
+            public void RemoveEntity(IEntityLocationData entity)
+            {
+                _items.Remove(entity);
+                entity.X = null;
+                entity.Y = null;
+                entity.Z = null;
+            }
+
+            public IEnumerable<IEntityLocationData> GetEntitiesAt(long x, long y, long z)
+            {
+                return _items.Where(item => item.X == x && item.Y == y && item.Z == z);
             }
 
             public U this[long x, long y, long z]
@@ -507,20 +636,22 @@ namespace InfiniMap
                 get
                 {
                     // Translate from world-space to chunk-space
-                    var blockX = Math.Abs(x) % _chunkHeight;
-                    var blockY = Math.Abs(y) % _chunkWidth;
-                    var blockZ = Math.Abs(z) % _chunkDepth;
+                    var chunkSpace = WorldToChunk(x, y, z);
+                    var blockX = chunkSpace.Item1;
+                    var blockY = chunkSpace.Item2;
+                    var blockZ = chunkSpace.Item3;
 
                     // Flat array, so walk the stride length for the Y component.
-                    return _blocks[blockX + _chunkWidth*(blockY + _chunkDepth*blockZ)];
+                    return _blocks[blockX + _chunkWidth * (blockY + _chunkDepth * blockZ)];
                 }
                 set
                 {
-                    var blockX = Math.Abs(x) % _chunkHeight;
-                    var blockY = Math.Abs(y) % _chunkWidth;
-                    var blockZ = Math.Abs(z) % _chunkDepth;
+                    var chunkSpace = WorldToChunk(x, y, z);
+                    var blockX = chunkSpace.Item1;
+                    var blockY = chunkSpace.Item2;
+                    var blockZ = chunkSpace.Item3;
 
-                    _blocks[blockX + _chunkWidth*(blockY + _chunkDepth*blockZ)] = value;
+                    _blocks[blockX + _chunkWidth * (blockY + _chunkDepth * blockZ)] = value;
                 }
             }
 
@@ -532,11 +663,20 @@ namespace InfiniMap
 
             public int Count { get { return _blocks.Length; } }
 
+            private Tuple<long, long, long> WorldToChunk(long x, long y, long z)
+            {
+                var blockX = Math.Abs(x) % _chunkHeight;
+                var blockY = Math.Abs(y) % _chunkWidth;
+                var blockZ = Math.Abs(z) % _chunkDepth;
+
+                return Tuple.Create(blockX, blockY, blockZ);
+            }
+
             private ChunkEnumerator Enumerate()
             {
                 return new ChunkEnumerator(this);
             }
-            
+
             IEnumerator IEnumerable.GetEnumerator()
             {
                 return Enumerate();
@@ -545,7 +685,7 @@ namespace InfiniMap
             public IEnumerator<U> GetEnumerator()
             {
                 return Enumerate();
-            } 
+            }
 
             private class ChunkEnumerator : IEnumerator<U>
             {
@@ -570,7 +710,7 @@ namespace InfiniMap
                     _current = default(U);
                 }
 
-                public void Dispose() {}
+                public void Dispose() { }
 
                 public void Reset()
                 {
@@ -583,14 +723,19 @@ namespace InfiniMap
                     {
                         return false;
                     }
-                    else
-                    {
-                        _current = _collection[_index];
-                    }
+
+                    _current = _collection[_index];
                     return true;
                 }
             }
         }
+    }
+
+    public interface IEntityLocationData
+    {
+        long? X { get; set; }
+        long? Y { get; set; }
+        long? Z { get; set; }
     }
 
     public static class ChunkMapExtensions
