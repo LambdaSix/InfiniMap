@@ -567,9 +567,22 @@ namespace InfiniMap
         /// <param name="entity">Entity to remove</param>
         public virtual void RemoveEntity(IEntityLocationData entity)
         {
-            var chunk = GetChunk(entity.X.Value, entity.Y.Value, entity.Z.Value, createIfNull: true);
+            if (!entity.X.HasValue && !entity.Y.HasValue && !entity.Y.HasValue)
+                throw new EntityNotInWorldException(entity, "Entity not tracked by map system");
+
+            var chunk = GetChunk(entity.X.GetValueOrDefault(), entity.Y.GetValueOrDefault(), entity.Z.GetValueOrDefault(), createIfNull: true);
 
             chunk.RemoveEntity(entity);
+        }
+
+        public class EntityNotInWorldException : Exception
+        {
+            public IEntityLocationData EntityInstance { get; set; }
+
+            public EntityNotInWorldException(IEntityLocationData entity, string message) : base(message)
+            {
+                EntityInstance = entity;
+            }
         }
 
         protected T Get(long x, long y, long z)
@@ -731,7 +744,18 @@ namespace InfiniMap
         }
     }
 
-    public interface IEntityLocationData
+    /// <summary>
+    /// The bare minimum information a chunk needs to know to store an entities location.
+    /// Extend this interface in your own code to add any additional things you need to know
+    /// about an entity stored in a chunk and implement on your concrete class.
+    /// </summary>
+    /// <remarks>
+    /// Positional values are nullable; as a null position is used to indicate an entity that is not
+    /// present in the world, either because it is awaiting deletion or exists in another container.
+    /// When you invoke Chunk{T}.RemoveEntity() the item is not nulled out, only it's positional data,
+    /// it merely ceases to be an item that chunk knows about, it will still exist in memory.
+    /// </remarks>
+    public partial interface IEntityLocationData
     {
         long? X { get; set; }
         long? Y { get; set; }
