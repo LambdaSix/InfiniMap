@@ -306,7 +306,7 @@ namespace InfiniMap
             {
                 var items = _readerFunc(coordinates).ToList();
 
-                if (items.Count() > (_chunkHeight*_chunkWidth*_chunkDepth))
+                if (items.Count > (_chunkHeight*_chunkWidth*_chunkDepth))
                 {
                     throw new NotSupportedException("Attempted to load a item block larger than this Maps chunk dimensions");
                 }
@@ -511,6 +511,7 @@ namespace InfiniMap
             if (entity.X != null && entity.Y != null && entity.Z != null)
             {
                 MoveEntity(x, y, z, entity);
+                return;
             }
 
             var chunk = GetChunk(x, y, z, createIfNull: true);
@@ -531,8 +532,11 @@ namespace InfiniMap
         /// <param name="entity"></param>
         private void MoveEntity(long x, long y, long z, IEntityLocationData entity)
         {
-            var oldChunk = GetChunk(entity.X.Value, entity.Y.Value, entity.Z.Value, createIfNull: true);
-            oldChunk.RemoveEntity(entity);
+            if (entity.X != null && (entity.Y != null && entity.Z != null))
+            {
+                var oldChunk = GetChunk(entity.X.Value, entity.Y.Value, entity.Z.Value, createIfNull: true);
+                oldChunk.RemoveEntity(entity);
+            }
 
             var newChunk = GetChunk(x, y, z, createIfNull: true);
             entity.X = x;
