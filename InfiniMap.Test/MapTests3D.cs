@@ -319,7 +319,7 @@ namespace InfiniMap.Test
             map.RemoveEntity(oldBoot);
             Assert.That(map.GetEntitiesAt(1, 1, 1).Any() == false);
 
-            // After removing, items have null co-ordinates.
+            // After removing, items have null coordinates.
             Assert.That(oldBoot.X == null);
             Assert.That(oldBoot.Y == null);
             Assert.That(oldBoot.Z == null);

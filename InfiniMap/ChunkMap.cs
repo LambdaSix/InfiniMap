@@ -34,8 +34,8 @@ namespace InfiniMap
         /// Add the entity to the location specified.
         /// Mutates the entities location data appropriately.
         /// </summary>
-        /// <param name="x">World-space X co-ordinate</param>
-        /// <param name="y">world-space Y co-ordinate</param>
+        /// <param name="x">World-space X coordinate</param>
+        /// <param name="y">world-space Y coordinate</param>
         /// <param name="entity">Entity to relocate</param>
         public void PutEntity(long x, long y, IEntityLocationData entity)
         {
@@ -45,8 +45,8 @@ namespace InfiniMap
         /// <summary>
         /// Returns all entities at the location.
         /// </summary>
-        /// <param name="x">World-space X co-ordinate</param>
-        /// <param name="y">World-space Y co-ordinate</param>
+        /// <param name="x">World-space X coordinate</param>
+        /// <param name="y">World-space Y coordinate</param>
         /// <returns>A set of entities at that location</returns>
         public IEnumerable<IEntityLocationData> GetEntitiesAt(long x, long y)
         {
@@ -56,9 +56,9 @@ namespace InfiniMap
         /// <summary>
         /// Returns all entities in the chunk containing the location
         /// </summary>
-        /// <param name="x">World-space X co-ordinate</param>
-        /// <param name="y">World-space Y co-ordinate</param>
-        /// <returns>A set of entities in the same chunk as the co-ordinates</returns>
+        /// <param name="x">World-space X coordinate</param>
+        /// <param name="y">World-space Y coordinate</param>
+        /// <returns>A set of entities in the same chunk as the coordinates</returns>
         public IEnumerable<IEntityLocationData> GetEntitiesInChunk(long x, long y)
         {
             return base.GetEntitiesInChunk(x, y, 0);
@@ -80,12 +80,12 @@ namespace InfiniMap
         /// <summary>
         /// Return a list of chunk sized enumerations from the specified area.
         /// </summary>
-        /// <param name="x0">Starting X co-ordinate</param>
-        /// <param name="y0">Starting Y co-ordinates</param>
-        /// <param name="x1">Ending X co-ordinates</param>
-        /// <param name="y1">Ending Y co-ordinates</param>
+        /// <param name="x0">Starting X coordinate</param>
+        /// <param name="y0">Starting Y coordinates</param>
+        /// <param name="x1">Ending X coordinates</param>
+        /// <param name="y1">Ending Y coordinates</param>
         /// <param name="createIfNull">If true, give the user a chance to create chunks</param>
-        /// <returns>A list of chunk sized enumerations from a specified area as (x,y,IEnumerable{T}) in chunk-space co-ordinates</returns>
+        /// <returns>A list of chunk sized enumerations from a specified area as (x,y,IEnumerable{T}) in chunk-space coordinates</returns>
         public new IEnumerable<Tuple<long, long, IEnumerable<T>>> ChunksWithin(long x0, long y0, long x1, long y1, bool createIfNull)
         {
             var result = base.ChunksWithin(x0, y0, x1, y1, createIfNull);
@@ -132,14 +132,14 @@ namespace InfiniMap
         /// <summary>
         /// Return a list of chunk sized enumerations from the specified area.
         /// </summary>
-        /// <param name="x0">Starting X co-ordinate</param>
-        /// <param name="y0">Starting Y co-ordinate</param>
-        /// <param name="z0">Starting Z co-ordinate</param>
-        /// <param name="x1">Ending X co-ordinate</param>
-        /// <param name="y1">Ending Y co-ordinate</param>
-        /// <param name="z1">Ending Z co-ordinate</param>
+        /// <param name="x0">Starting X coordinate</param>
+        /// <param name="y0">Starting Y coordinate</param>
+        /// <param name="z0">Starting Z coordinate</param>
+        /// <param name="x1">Ending X coordinate</param>
+        /// <param name="y1">Ending Y coordinate</param>
+        /// <param name="z1">Ending Z coordinate</param>
         /// <param name="createIfNull">If true, give the user a chance to create chunks</param>
-        /// <returns>A list of chunk sized enumerations from a specified area as (x,y,z,IEnumerable{T}) in chunk-space co-ordinates</returns>
+        /// <returns>A list of chunk sized enumerations from a specified area as (x,y,z,IEnumerable{T}) in chunk-space coordinates</returns>
         public new IEnumerable<Tuple<long, long, long, IEnumerable<T>>> ChunksWithin(long x0, long y0, long z0, long x1, long y1, long z1, bool createIfNull)
         {
             var result = base.ChunksWithin(x0, y0, z0, x1, y1, z1, createIfNull);
@@ -163,16 +163,16 @@ namespace InfiniMap
     /// The user need not be intimately aware that the map is chunked.
     /// </summary>
     /// <remarks>
-    /// There are three co-ordinate systems in use, chunk, item, and world.
+    /// There are three coordinate systems in use, chunk, item, and world.
     /// 
-    ///     Chunk-Space, A co-ordinate of a chunk among other chunks, the center of the world is chunk (0,0,0)
+    ///     Chunk-Space, A coordinate of a chunk among other chunks, the center of the world is chunk (0,0,0)
     ///                 the chunk sitting on top of that to it would be (0,0,1)
     /// 
-    ///     World-Space, A co-ordinate of an item among other items, the center of the world is (0,0,0) and
+    ///     World-Space, A coordinate of an item among other items, the center of the world is (0,0,0) and
     ///                 an item directly ontop of it would be (0,0,1). An item 63 tiles away on the Y plane would be
     ///                 (0,63,1)
     /// 
-    ///     Item-Space, A co-ordinate of an item inside a block, translated from world-space. The item at (worldspace) (0,0,1)
+    ///     Item-Space, A coordinate of an item inside a block, translated from world-space. The item at (worldspace) (0,0,1)
     ///                 exists in the chunk space of (0,0,0) and the block space of (0,0,1).
     ///                 An item at (63,0,0) in the world exists in chunkspace at (3,0,0) and itemspace of (15,0,0)
     /// 
@@ -241,7 +241,7 @@ namespace InfiniMap
         /// </summary>
         /// <remarks>
         /// <paramref name="writeFunc"/> will be called once for every chunk in memory, it gets passed
-        /// a chunks worth of {T} each time, along with the chunk co-ordinates as an 3-tuple of (x,y,z)
+        /// a chunks worth of {T} each time, along with the chunk coordinates as an 3-tuple of (x,y,z)
         /// </remarks>
         /// <param name="writeFunc">Serialization function to use</param>
         public void Write(Action<IEnumerable<T>, Tuple<long,long,long>> writeFunc)
@@ -298,7 +298,7 @@ namespace InfiniMap
         /// <summary>
         /// Read a chunk using the reader function, or a blank block.
         /// </summary>
-        /// <param name="coordinates">3-Tuple of co-ordinates of chunk to read</param>
+        /// <param name="coordinates">3-Tuple of coordinates of chunk to read</param>
         /// <returns>Chunk filled with T</returns>
         private Chunk<T> ReadChunk(Tuple<long,long,long> coordinates)
         {
@@ -321,7 +321,7 @@ namespace InfiniMap
         /// <summary>
         /// Write a chunk using the write function, if defined.
         /// </summary>
-        /// <param name="coordinates">3-Tuple of co-ordinates of the chunk to write</param>
+        /// <param name="coordinates">3-Tuple of coordinates of the chunk to write</param>
         /// <param name="chunk">The chunk to write</param>
         private void WriteChunk(Tuple<long, long, long> coordinates, Chunk<T> chunk)
         {
@@ -460,7 +460,7 @@ namespace InfiniMap
         }
 
         /// <summary>
-        /// Unload a chunk from the world by the given chunk-space co-ordinates
+        /// Unload a chunk from the world by the given chunk-space coordinates
         /// </summary>
         /// <param name="x">Chunk X position</param>
         /// <param name="y">Chunk Y position</param>
@@ -501,9 +501,9 @@ namespace InfiniMap
         /// If the entity exists in the world already, it moves it.
         /// Mutates the entities location data appropriately.
         /// </summary>
-        /// <param name="x">World-space X co-ordinate</param>
-        /// <param name="y">World-space Y co-ordinate</param>
-        /// <param name="z">World-space Z co-ordinate</param>
+        /// <param name="x">World-space X coordinate</param>
+        /// <param name="y">World-space Y coordinate</param>
+        /// <param name="z">World-space Z coordinate</param>
         /// <param name="entity">Entity to relocate</param>
         public virtual void PutEntity(long x, long y, long z, IEntityLocationData entity)
         {
@@ -770,7 +770,7 @@ namespace InfiniMap
     {
         /// <summary>
         /// Provides a centered square distance on a center point including negative chunk
-        /// co-ordinates.
+        /// coordinates.
         /// An odd value for range will round upwards.
         /// </summary>
         /// <remarks>
@@ -781,7 +781,7 @@ namespace InfiniMap
         /// <param name="startX">Center position</param>
         /// <param name="startY">Center position</param>
         /// <param name="range">Range of search</param>
-        /// <returns>A list of co-ordinates that are within the area</returns>
+        /// <returns>A list of coordinates that are within the area</returns>
         public static IEnumerable<Tuple<int, int>> Distance<T>(this ChunkMap<T> context, int startX, int startY, int range)
         {
             range = (range % 2 == 0) ? range : range + 1;
