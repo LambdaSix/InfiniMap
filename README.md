@@ -30,7 +30,7 @@ When infinimap generates a new chunk, it invokes a user registerable callback pr
 
 For managing entities; non-tile data; inside a chunk, the methods `PutEntity(...)`, `MoveEntity(...)`, `GetEntitiesInChunk(...)`, `GetEntitiesAt(...)` and `RemoveEntity(...)` are provided for managing entities at a chunk level, the only requirement for an entity to be managed with this system is that it implement `IEntityLocationData` for coordinate tracking.
 
-### coordinate Systems
+### Coordinate Systems
 
 There are three coordinate systems in use, Chunk, Item, and World.
 
