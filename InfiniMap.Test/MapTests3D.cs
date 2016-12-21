@@ -1,4 +1,5 @@
 using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
@@ -18,20 +19,21 @@ namespace InfiniMap.Test
             map[16, 16, 16] = 2.0f;     // Chunk: (1,1,1)
             map[32, 32, 32] = 4.0f;     // Chunk: (2,2,2)
 
-            var list = new List<Tuple<long, long, long>>();
+            var list = new List<ChunkSpace>();
 
-            map.RegisterWriter((xyz, tuple) => {
-                                   Console.WriteLine("Writing: ({0},{1},{2})", tuple.Item1, tuple.Item2, tuple.Item3);
-                                   list.Add(tuple);
-                               });
+            map.RegisterWriter((xyz, tuple) =>
+            {
+                Console.WriteLine("Writing: ({0},{1},{2})", xyz.X, xyz.Y, xyz.Z);
+                list.Add(xyz);
+            });
 
             map.UnloadArea(0, 0, 0, 32, 32, 32);
 
             Assert.AreEqual(3, list.Count);
 
-            Assert.That(list.Contains(Tuple.Create(0L, 0L, 0L)));
-            Assert.That(list.Contains(Tuple.Create(1L, 1L, 1L)));
-            Assert.That(list.Contains(Tuple.Create(2L, 2L, 2L)));
+            Assert.That(list.Contains(new ChunkSpace(0L, 0L, 0L)));
+            Assert.That(list.Contains(new ChunkSpace(1L, 1L, 1L)));
+            Assert.That(list.Contains(new ChunkSpace(2L, 2L, 2L)));
 
             map.UnregisterWriter();
             map[48, 48, 48] = 4.0f;
@@ -99,8 +101,10 @@ namespace InfiniMap.Test
             var map = new Map3D<float>();
             map[1, 1, 1] = 4.0f;
 
-            Assert.That(map.Within(0, 0, 0, 2, 2, 2).Any());
-            Assert.That(map.Within(0, 0, 0, 2, 2, 2).Any(i => Math.Abs(i - 4.0f) < 0.001));
+            Assert.That(map.Within(new WorldSpace(0, 0, 0), new WorldSpace(2, 2, 2)).Any());
+
+            Assert.That(map.Within(new WorldSpace(0, 0, 0), new WorldSpace(2, 2, 2))
+                .Any(i => Math.Abs(i - 4.0f) < 0.001));
         }
 
         [Test]
@@ -195,42 +199,51 @@ namespace InfiniMap.Test
 
             // A single chunk at the bottom of the stack
             {
-                var chunksFound = map.ChunksWithin(0, 0, 0, 15, 15, 15, createIfNull: false).ToList();
+                var begin = new WorldSpace(0, 0, 0);
+                var end = new WorldSpace(15, 15, 15);
+
+                var chunksFound = map.ChunksWithin(begin, end, createIfNull: false).ToList();
                 Assert.AreEqual(1, chunksFound.Count());
-                Assert.AreEqual(0, chunksFound.Select(s => s.Item3).First());
+                Assert.AreEqual(0, chunksFound.Select(s => s.Item1.Z).First());
 
                 // Assert that it is the correct chunk
-                Assert.That(chunksFound.ElementAt(0).Item4.Contains(2.0f));
+                Assert.That(chunksFound.ElementAt(0).Item2.Contains(2.0f));
             }
 
             // All three chunks stacked on top of each other
             {
-                var chunksFound = map.ChunksWithin(0, 0, 0, 15, 15, 33, createIfNull: false).ToList();
+                var begin = new WorldSpace(0, 0, 0);
+                var end = new WorldSpace(15, 15, 33);
+
+                var chunksFound = map.ChunksWithin(begin, end, createIfNull: false).ToList();
                 Assert.AreEqual(3, chunksFound.Count());
 
                 IEnumerable<long> zSequences = new List<long> { 0, 1, 2 };
-                var chunks = chunksFound.Select(chunk => chunk.Item3).OrderBy(s => s);
+                var chunks = chunksFound.Select(chunk => chunk.Item1.Z).OrderBy(s => s).AsEnumerable();
                 Assert.AreEqual(3, chunks.Union(zSequences).Count());
                 
                 // Assert we have the actual chunks
-                Assert.That(chunksFound.ElementAt(0).Item4.Contains(2.0f));
-                Assert.That(chunksFound.ElementAt(1).Item4.Contains(4.0f));
-                Assert.That(chunksFound.ElementAt(2).Item4.Contains(8.0f));
+                Assert.That(chunksFound.ElementAt(0).Item2.Contains(2.0f));
+                Assert.That(chunksFound.ElementAt(1).Item2.Contains(4.0f));
+                Assert.That(chunksFound.ElementAt(2).Item2.Contains(8.0f));
             }
 
             // The two top most stacks
             {
-                var chunksFound = map.ChunksWithin(0, 0, 16, 15, 15, 33, createIfNull: false).ToList();
+                var begin = new WorldSpace(0, 0, 16);
+                var end = new WorldSpace(15, 15, 33);
+
+                var chunksFound = map.ChunksWithin(begin, end, createIfNull: false).ToList();
                 Assert.AreEqual(2, chunksFound.Count());
 
                 // Assert that we got back the right chunks in terms of Z level startings
                 var zSequences = new List<long> { 1, 2 };
-                var chunks = chunksFound.Select(chunk => chunk.Item3).OrderBy(s => s);
+                var chunks = chunksFound.Select(chunk => chunk.Item1.Z).OrderBy(s => s);
                 Assert.AreEqual(2, chunks.Union(zSequences).Count());
 
                 // Assert we have the actual chunks.
-                Assert.That(chunksFound.ElementAt(0).Item4.Contains(4.0f));
-                Assert.That(chunksFound.ElementAt(1).Item4.Contains(8.0f));
+                Assert.That(chunksFound.ElementAt(0).Item2.Contains(4.0f));
+                Assert.That(chunksFound.ElementAt(1).Item2.Contains(8.0f));
             }
         }
 
@@ -238,33 +251,42 @@ namespace InfiniMap.Test
         public void SupportsUnloadingOutsideArea()
         {
             var map = new Map3D<float>(16, 16, 16);
-            map[4, 4, 0] = 2.0f;
-            map[63, 63, 0] = 4.0f;
 
-            // Two chunks loaded
-            Assert.AreEqual((16 * 16 * 16) * 2, map.Count);
+            {
+                map[4, 4, 0] = 2.0f;
+                map[63, 63, 0] = 4.0f;
 
-            map.UnloadAreaOutside(0, 0, 0, 15, 15, 0);
+                // Two chunks loaded
+                Assert.AreEqual((16 * 16 * 16) * 2, map.Count);
 
-            // Ony one chunk left
-            Assert.AreEqual((16 * 16 * 16), map.Count);
+                var begin = new WorldSpace(0, 0, 0);
+                var end = new WorldSpace(15, 15, 0);
+                map.UnloadAreaOutside(begin, end);
+
+                // Ony one chunk left
+                Assert.AreEqual((16 * 16 * 16), map.Count);
+            }
 
             // Non-zero test
 
-            map[0, 0, 0] = 2.0f;
-            map[16, 16, 0] = 2.0f;
-            map[32, 32, 0] = 4.0f;
-            map[48, 48, 7] = 8.0f;
-            map[64, 64, 15] = 16.0f;
-            map[80, 80, 15] = 32.0f;
-            map[96, 96, 0] = 64.0f;
-            map[128, 128, 0] = 128.0f;
+            {
+                map[0, 0, 0] = 2.0f;
+                map[16, 16, 0] = 2.0f;
+                map[32, 32, 0] = 4.0f;
+                map[48, 48, 7] = 8.0f;
+                map[64, 64, 15] = 16.0f;
+                map[80, 80, 15] = 32.0f;
+                map[96, 96, 0] = 64.0f;
+                map[128, 128, 0] = 128.0f;
 
-            Assert.AreEqual((16 * 16 * 16) * 8, map.Count);
+                Assert.AreEqual((16 * 16 * 16) * 8, map.Count);
 
-            map.UnloadAreaOutside(48, 48, 0, 80, 80, 15);
+                var begin = new WorldSpace(48, 48, 0);
+                var end = new WorldSpace(80, 80, 15);
+                map.UnloadAreaOutside(begin, end);
 
-            Assert.AreEqual((16 * 16 * 16) * 3, map.Count);
+                Assert.AreEqual((16 * 16 * 16) * 3, map.Count);
+            }
         }
     }
 
@@ -278,7 +300,7 @@ namespace InfiniMap.Test
 
             var oldBoot = new Entity { Name = "Old Boot" };
 
-            map.PutEntity(1, 1, 1, oldBoot);
+            map.PutEntity(new WorldSpace(1, 1, 1), oldBoot);
 
             Assert.That(map.GetEntitiesAt(1, 1, 1).Any());
             Assert.That(oldBoot.X == 1 && oldBoot.Y == 1);
@@ -291,13 +313,13 @@ namespace InfiniMap.Test
 
             var oldBoot = new Entity { Name = "Old Boot" };
 
-            map.PutEntity(1, 1, 1, oldBoot);
+            map.PutEntity(new WorldSpace(1, 1, 1), oldBoot);
 
             Assert.That(map.GetEntitiesAt(1, 1, 1).Any());
             Assert.That(oldBoot.X == 1 && oldBoot.Y == 1);
 
             // Put the boot somewhere else, moving it.
-            map.PutEntity(17, 17, 17, oldBoot);
+            map.PutEntity(new WorldSpace(17, 17, 17), oldBoot);
             oldBoot.Name = "Spooky Old Boot";
 
             Assert.That(map.GetEntitiesAt(1, 1, 1).Any() == false);
@@ -311,7 +333,7 @@ namespace InfiniMap.Test
 
             var oldBoot = new Entity { Name = "Old Boot" };
 
-            map.PutEntity(1, 1, 1, oldBoot);
+            map.PutEntity(new WorldSpace(1, 1, 1), oldBoot);
 
             Assert.That(map.GetEntitiesAt(1, 1, 1).Any());
             Assert.That(oldBoot.X == 1 && oldBoot.Y == 1);
@@ -334,14 +356,14 @@ namespace InfiniMap.Test
             var oldCan = new Entity { Name = "Old Boot" };
             var oldBucket = new Entity { Name = "Old Boot" };
 
-            map.PutEntity(1, 1, 1, oldBoot);
-            map.PutEntity(1, 1, 1, oldBucket);
-            map.PutEntity(1, 1, 1, oldCan);
+            map.PutEntity(new WorldSpace(1, 1, 1), oldBoot);
+            map.PutEntity(new WorldSpace(1, 1, 1), oldBucket);
+            map.PutEntity(new WorldSpace(1, 1, 1), oldCan);
 
             Assert.That(map.GetEntitiesAt(1, 1, 1).Any());
             Assert.That(oldBoot.X == 1 && oldBoot.Y == 1);
 
-            Assert.That(map.GetEntitiesInChunk(1, 1, 1).Count() == 3);
+            Assert.That(map.GetEntitiesInChunk(new ChunkSpace(1, 1, 1)).Count() == 3);
         }
 
         [Test]
@@ -351,12 +373,12 @@ namespace InfiniMap.Test
 
             var oldBoot = new Entity { Name = "Old Boot" };
 
-            map.PutEntity(1, 1, 1, oldBoot);
+            map.PutEntity(new WorldSpace(1, 1, 1), oldBoot);
 
             Assert.That(map.GetEntitiesAt(1, 1, 1).Any());
             Assert.That(oldBoot.X == 1 && oldBoot.Y == 1);
 
-            map.PutEntity(17, 17, 17, oldBoot);
+            map.PutEntity(new WorldSpace(17, 17, 17), oldBoot);
             Assert.That(map.GetEntitiesAt(1, 1, 1).Any() == false);
             Assert.That(map.GetEntitiesAt(17, 17, 17).Any());
             Assert.That(oldBoot.X == 17 && oldBoot.Y == 17);

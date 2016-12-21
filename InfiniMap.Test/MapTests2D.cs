@@ -17,26 +17,26 @@ namespace InfiniMap.Test
             map[16, 16] = 2.0f;     // Chunk: (1,1,1)
             map[32, 32] = 4.0f;     // Chunk: (2,2,2)
 
-            var list = new List<Tuple<long, long, long>>();
+            var list = new List<ChunkSpace>();
 
-            map.RegisterWriter((xyz, tuple) =>
+            map.RegisterWriter((xyz, items) =>
             {
-                Console.WriteLine("Writing: ({0},{1},{2})", tuple.Item1, tuple.Item2, tuple.Item3);
-                list.Add(tuple);
+                Console.WriteLine("Writing: ({0},{1},{2})", xyz.X, xyz.Y, xyz.Z);
+                list.Add(xyz);
             });
 
-            map.UnloadArea(0, 0, 32, 32);
+            map.UnloadArea(new WorldSpace2D(0, 0), new WorldSpace2D(32, 32));
 
             Assert.AreEqual(3, list.Count);
 
-            Assert.That(list.Contains(Tuple.Create(0L, 0L, 0L)));
-            Assert.That(list.Contains(Tuple.Create(1L, 1L, 0L)));
-            Assert.That(list.Contains(Tuple.Create(2L, 2L, 0L)));
+            Assert.That(list.Contains(new ChunkSpace(0L, 0L, 0L)));
+            Assert.That(list.Contains(new ChunkSpace(1L, 1L, 0L)));
+            Assert.That(list.Contains(new ChunkSpace(2L, 2L, 0L)));
 
             map.UnregisterWriter();
             map[48, 48] = 4.0f;
 
-            map.UnloadArea(0, 0, 48, 48);
+            map.UnloadArea(new WorldSpace2D(0, 0), new WorldSpace2D(48, 48));
             Assert.AreEqual(3, list.Count);
         }
 
@@ -103,8 +103,11 @@ namespace InfiniMap.Test
             var map = new Map2D<float>();
             map[1, 2] = 4.0f;
 
-            Assert.That(map.Within(0, 0, 4, 4).Any());
-            Assert.That(map.Within(0, 0, 4, 4).Any(i => Math.Abs(i - 4.0f) < 0.001));
+            var begin = new WorldSpace2D(0, 0);
+            var end = new WorldSpace2D(4, 4);
+
+            Assert.That(map.Within(begin,end).Any());
+            Assert.That(map.Within(begin, end).Any(i => Math.Abs(i - 4.0f) < 0.001));
         }
 
         [Test]
@@ -162,7 +165,7 @@ namespace InfiniMap.Test
                 Assert.AreEqual(0, chunksFound.Select(s => s.Item1).First());
 
                 // Assert that it is the correct chunk
-                Assert.That(chunksFound.ElementAt(0).Item3.Contains(2.0f));
+                Assert.That(chunksFound.ElementAt(0).Item2.Contains(2.0f));
             }
 
             // Two chunks
@@ -172,8 +175,8 @@ namespace InfiniMap.Test
                 Assert.AreEqual(3, chunksFound.Select(s => s.Item1).ElementAt(1));
                 
                 // Assert that these are the correct chunks.
-                Assert.That(chunksFound.ElementAt(0).Item3.Contains(2.0f));
-                Assert.That(chunksFound.ElementAt(1).Item3.Contains(4.0f));
+                Assert.That(chunksFound.ElementAt(0).Item2.Contains(2.0f));
+                Assert.That(chunksFound.ElementAt(1).Item2.Contains(4.0f));
             }
         }
 
@@ -188,7 +191,10 @@ namespace InfiniMap.Test
 
             Assert.AreEqual((16 * 16) * 3, map.Count);
 
-            map.UnloadArea(0, 0, 33, 33);
+            var begin = new WorldSpace2D(0, 0);
+            var end = new WorldSpace2D(33, 33);
+
+            map.UnloadArea(begin, end);
 
             Assert.AreEqual(0, map.Count);
         }
