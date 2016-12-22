@@ -10,11 +10,8 @@ namespace InfiniMap
 
         public Map3D() : this(16,16,16) { }
 
-        public void UnloadArea(long x0, long y0, long z0, long x1, long y1, long z1 )
+        public void UnloadArea(WorldSpace begin, WorldSpace end)
         {
-            var begin = new WorldSpace(x0, y0, z0);
-            var end = new WorldSpace(x1, y1, z1);
-
             var sequence = base.ChunksWithin(begin, end, createIfNull: false)
                 .Select(chunk => TranslateWorldToChunk(chunk.Item1));
 

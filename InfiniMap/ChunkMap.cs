@@ -2,67 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 
 namespace InfiniMap
 {
-    public struct ChunkSpace
-    {
-        public long X;
-        public long Y;
-        public long Z;
-
-        public ChunkSpace(long x, long y, long z)
-        {
-            X = x;
-            Y = y;
-            Z = z;
-        }
-    }
-
-    public struct WorldSpace
-    {
-        public readonly long X;
-        public readonly long Y;
-        public readonly long Z;
-
-        public WorldSpace(long x, long y, long z) : this()
-        {
-            X = x;
-            Y = y;
-            Z = z;
-        }
-
-        /// <inheritdoc />
-        public override int GetHashCode()
-        {
-            return X.GetHashCode() | Y.GetHashCode() | Z.GetHashCode();
-        }
-
-        /// <inheritdoc />
-        public override bool Equals(object obj)
-        {
-            return obj?.GetHashCode() == GetHashCode();
-        }
-
-        public static bool operator ==(WorldSpace self, WorldSpace other) => self.GetHashCode() == other.GetHashCode();
-        public static bool operator !=(WorldSpace self, WorldSpace other) => self.GetHashCode() != other.GetHashCode();
-    }
-
-    public struct ItemSpace
-    {
-        public byte X;
-        public byte Y;
-        public byte Z;
-
-        public ItemSpace(byte x, byte y, byte z) : this()
-        {
-            X = x;
-            Y = y;
-            Z = z;
-        }
-    }
-
     /// <summary>
     /// An abstract base class for providing chunked item storage in a 3 dimension grid.
     /// The user need not be intimately aware that the map is chunked.
@@ -95,6 +37,9 @@ namespace InfiniMap
 
         public ChunkMap(int chunkHeight, int chunkWidth, int chunkDepth)
         {
+            if (chunkHeight > 255 || chunkWidth > 255 || chunkDepth > 255)
+                throw new ArgumentException("Dimensions of a chunk cannot be larger than 64x64x64");
+
             _chunkHeight = chunkHeight;
             _chunkWidth = chunkWidth;
             _chunkDepth = chunkDepth;
@@ -290,17 +235,14 @@ namespace InfiniMap
         /// A list of pairs, containing the starting coordinates of the chunk, plus the chunk itself
         /// as: (WorldSpace,Chunk{T})
         /// </returns>
-        protected virtual IEnumerable<Tuple<WorldSpace, Chunk<T>>> ChunksWithin(WorldSpace spaceStart, WorldSpace spaceEnd, bool createIfNull)
+        protected virtual IEnumerable<Tuple<WorldSpace, Chunk<T>>> ChunksWithin(WorldSpace begin, WorldSpace end, bool createIfNull)
         {
             var xPoints = new List<long>();
             var yPoints = new List<long>();
             var zPoints = new List<long>();
 
-            var tl = spaceStart;
-            var bl = spaceEnd;
-
-            var x0 = bl.X; var y0 = bl.Y; var z0 = bl.Z;
-            var x1 = tl.X; var y1 = tl.Y; var z1 = tl.Z;
+            var x0 = begin.X; var y0 = begin.Y; var z0 = begin.Z;
+            var x1 = end.X; var y1 = end.Y; var z1 = end.Z;
 
             var xChunkLength = ((Math.Abs(x1) - Math.Abs(x0))/_chunkWidth) + 1;
             var yChunkLength = ((Math.Abs(y1) - Math.Abs(y0))/_chunkHeight) + 1;
@@ -357,10 +299,17 @@ namespace InfiniMap
         /// <summary>
         /// Unload a chunk from the world by the given chunk-space coordinates
         /// </summary>
-        protected void UnloadChunk(ChunkSpace coordinates)
+        /// <returns>True if the chunk was unloaded, false if the chunk was a persistant chunk</returns>
+        protected bool UnloadChunk(ChunkSpace coordinates)
         {
-            WriteChunk(coordinates, GetChunk(coordinates, createIfNull: false));
+            var chunk = GetChunk(coordinates, createIfNull: false);
+
+            if (chunk?.IsPersisted == true)
+                return false;           
+
+            WriteChunk(coordinates, chunk);
             _map.Remove(coordinates);
+            return true;
         }
 
         private Chunk<T> GetChunk(ChunkSpace chunkCoordinate, bool createIfNull)
@@ -489,6 +438,8 @@ namespace InfiniMap
             chunk[coordinates] = block;
         }
 
+        public virtual void MakePersistant(WorldSpace coordinates) => GetChunk(coordinates, createIfNull: false).Persist();
+
         protected class Chunk<U> : IEnumerable<U>
         {
             private readonly int _chunkWidth;
@@ -496,6 +447,9 @@ namespace InfiniMap
             private readonly int _chunkDepth;
             private readonly U[] _blocks;
             private readonly HashSet<IEntityLocationData> _items;
+            private bool _persist;
+
+            public bool IsPersisted => _persist;
 
             public Chunk(int chunkHeight, int chunkWidth, int chunkDepth, IEnumerable<U> items)
                 : this(chunkHeight, chunkWidth, chunkDepth)
@@ -513,6 +467,10 @@ namespace InfiniMap
                 _blocks = new U[chunkHeight * chunkWidth * chunkDepth];
                 _items = new HashSet<IEntityLocationData>();
             }
+
+            public void Persist() => _persist = true;
+            public void Unpersist() => _persist = false;
+            public void TogglePersist() => _persist = !_persist;
 
             public IEnumerable<IEntityLocationData> GetEntities()
             {
@@ -543,9 +501,9 @@ namespace InfiniMap
                 {
                     // Translate from world-space to chunk-space
                     var chunkSpace = WorldToChunk(coordinate);
-                    var blockX = chunkSpace.Item1;
-                    var blockY = chunkSpace.Item2;
-                    var blockZ = chunkSpace.Item3;
+                    var blockX = chunkSpace.X;
+                    var blockY = chunkSpace.Y;
+                    var blockZ = chunkSpace.Z;
 
                     // Flat array, so walk the stride length for the Y component.
                     return _blocks[blockX + _chunkWidth * (blockY + _chunkDepth * blockZ)];
@@ -553,9 +511,9 @@ namespace InfiniMap
                 set
                 {
                     var chunkSpace = WorldToChunk(coordinate);
-                    var blockX = chunkSpace.Item1;
-                    var blockY = chunkSpace.Item2;
-                    var blockZ = chunkSpace.Item3;
+                    var blockX = chunkSpace.X;
+                    var blockY = chunkSpace.Y;
+                    var blockZ = chunkSpace.Z;
 
                     _blocks[blockX + _chunkWidth * (blockY + _chunkDepth * blockZ)] = value;
                 }
@@ -569,13 +527,13 @@ namespace InfiniMap
 
             public int Count { get { return _blocks.Length; } }
 
-            private Tuple<long, long, long> WorldToChunk(WorldSpace coordinate)
+            private ItemSpace WorldToChunk(WorldSpace coordinate)
             {
                 var blockX = Math.Abs(coordinate.X) % _chunkHeight;
                 var blockY = Math.Abs(coordinate.Y) % _chunkWidth;
                 var blockZ = Math.Abs(coordinate.Z) % _chunkDepth;
 
-                return Tuple.Create(blockX, blockY, blockZ);
+                return new ItemSpace((byte)blockX, (byte)blockY, (byte)blockZ);
             }
 
             private ChunkEnumerator Enumerate()

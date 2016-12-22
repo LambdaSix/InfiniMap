@@ -1,44 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 
 namespace InfiniMap
 {
-    public struct WorldSpace2D
-    {
-        public readonly long X;
-        public readonly long Y;
-        internal readonly long Z;
-
-        public WorldSpace2D(long x, long y) : this()
-        {
-            X = x;
-            Y = y;
-            Z = 0;
-        }
-
-        /// <inheritdoc />
-        public override int GetHashCode()
-        {
-            return X.GetHashCode() | Y.GetHashCode() | Z.GetHashCode();
-        }
-
-        /// <inheritdoc />
-        public override bool Equals(object obj)
-        {
-            return obj?.GetHashCode() == GetHashCode();
-        }
-
-        public static bool operator ==(WorldSpace2D self, WorldSpace2D other) => self.GetHashCode() == other.GetHashCode();
-        public static bool operator ==(WorldSpace2D self, WorldSpace other) => self.GetHashCode() == other.GetHashCode();
-
-        public static bool operator !=(WorldSpace2D self, WorldSpace2D other) => self.GetHashCode() != other.GetHashCode();
-        public static bool operator !=(WorldSpace2D self, WorldSpace other) => self.GetHashCode() != other.GetHashCode();
-
-        public static explicit operator WorldSpace(WorldSpace2D self) => new WorldSpace(self.X, self.Y, self.Z);
-    }
-
     public class Map2D<T> : ChunkMap<T>
     {
         public Map2D(int chunkHeight, int chunkWidth) : base(chunkHeight, chunkWidth, 1) {}
@@ -47,13 +12,13 @@ namespace InfiniMap
 
         public IEnumerable<T> Within(WorldSpace2D begin, WorldSpace2D end)
         {
-            return Within((WorldSpace) begin, (WorldSpace) end);
+            return base.Within(begin, end);
         }
 
         public T this[WorldSpace2D coordinate]
         {
-            get { return base[(WorldSpace)coordinate]; }
-            set { base[(WorldSpace)coordinate] = value; }
+            get { return base[coordinate]; }
+            set { base[coordinate] = value; }
         }
 
         public T this[long x, long y]
@@ -64,13 +29,19 @@ namespace InfiniMap
 
         public void UnloadArea(WorldSpace2D begin, WorldSpace2D end)
         {
-            var sequence = base.ChunksWithin((WorldSpace) begin, (WorldSpace) end, createIfNull: false)
+            var sequence = base.ChunksWithin(begin, end, createIfNull: false)
                 .Select(chunk => TranslateWorldToChunk(chunk.Item1));
 
             foreach (var position in sequence)
             {
                 UnloadChunk(position);
             }
+        }
+
+        /// <inheritdoc />
+        public void MakePersistant(WorldSpace2D coordinates)
+        {
+            base.MakePersistant(coordinates);
         }
 
         /// <summary>
@@ -135,5 +106,74 @@ namespace InfiniMap
             return base.ChunksWithin(x0, y0, x1, y1, createIfNull)
                 .Select(s => Tuple.Create(TranslateWorldToChunk(s.Item1), s.Item2.AsEnumerable()));
         }
+    }
+
+    public struct WorldSpace2D : IEquatable<WorldSpace2D>
+    {
+        public readonly long X;
+        public readonly long Y;
+
+        public WorldSpace2D(long x, long y) : this()
+        {
+            X = x;
+            Y = y;
+        }
+
+        /// <inheritdoc />
+        public bool Equals(WorldSpace2D other)
+        {
+            return X == other.X && Y == other.Y;
+        }
+
+        /// <inheritdoc />
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            return obj is WorldSpace2D && Equals((WorldSpace2D)obj);
+        }
+
+        /// <inheritdoc />
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = X.GetHashCode();
+                hashCode = (hashCode * 397) ^ Y.GetHashCode();
+                hashCode = (hashCode * 397) ^ 0.GetHashCode();
+                return hashCode;
+            }
+        }
+
+        /// <inheritdoc />
+        public override string ToString() => $"{X},{Y}";
+
+        public static bool operator ==(WorldSpace2D self, WorldSpace2D other) => self.GetHashCode() == other.GetHashCode();
+        public static bool operator ==(WorldSpace2D self, WorldSpace other) => self.GetHashCode() == other.GetHashCode();
+        public static bool operator ==(WorldSpace self, WorldSpace2D other) => self.GetHashCode() == other.GetHashCode();
+
+        public static bool operator !=(WorldSpace2D self, WorldSpace2D other) => self.GetHashCode() != other.GetHashCode();
+        public static bool operator !=(WorldSpace2D self, WorldSpace other) => self.GetHashCode() != other.GetHashCode();
+        public static bool operator !=(WorldSpace self, WorldSpace2D other) => self.GetHashCode() != other.GetHashCode();
+
+        public static implicit operator WorldSpace2D(WorldSpace self) => new WorldSpace2D(self.X, self.Y);
+
+#if CSHARP7
+        public static implicit operator (long, long) (WorldSpace2D self) => (self.X, self.Y);
+        public static implicit operator WorldSpace2D((long x, long y) self) => new WorldSpace2D(self.x, self.y);
+        public static implicit operator WorldSpace2D((int x, int y) self) => new WorldSpace2D(self.x, self.y);
+
+
+        public static bool operator ==(WorldSpace2D self, (long x, long y) other)
+            => (other.x == self.X && other.y == self.Y);
+
+        public static bool operator !=(WorldSpace2D self, (long x, long y) other)
+            => (other.x != self.X || other.y == self.Y);
+
+        public static bool operator ==(WorldSpace2D self, (int x, int y) other)
+            => (other.x == self.X && other.y == self.Y);
+
+        public static bool operator !=(WorldSpace2D self, (int x, int y) other)
+            => (other.x != self.X || other.y == self.Y);
+#endif
     }
 }

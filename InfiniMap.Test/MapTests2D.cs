@@ -36,7 +36,7 @@ namespace InfiniMap.Test
             map.UnregisterWriter();
             map[48, 48] = 4.0f;
 
-            map.UnloadArea(new WorldSpace2D(0, 0), new WorldSpace2D(48, 48));
+            map.UnloadArea((0, 0), (48, 48));
             Assert.AreEqual(3, list.Count);
         }
 
@@ -152,17 +152,16 @@ namespace InfiniMap.Test
             var map = new Map2D<float>(16, 16);
 
             map[1, 1] = 2.0f;
-            map[63, 63] = 4.0f;
-            map[1, 127] = 8.0f;
+            map[31, 31] = 4.0f;
 
-            // Assert we have 3 chunks in memory.
-            Assert.AreEqual((16 * 16) * 3, map.Count);
+            // Assert we have 2 chunks in memory.
+            Assert.AreEqual((16 * 16) * 2, map.Count);
 
             // A single chunk
             {
                 var chunksFound = map.ChunksWithin(0, 0, 15, 15, createIfNull: false).ToList();
                 Assert.AreEqual(1, chunksFound.Count());
-                Assert.AreEqual(0, chunksFound.Select(s => s.Item1).First());
+                Assert.AreEqual(0, chunksFound.Select(s => s.Item1.X).First());
 
                 // Assert that it is the correct chunk
                 Assert.That(chunksFound.ElementAt(0).Item2.Contains(2.0f));
@@ -170,9 +169,9 @@ namespace InfiniMap.Test
 
             // Two chunks
             {
-                var chunksFound = map.ChunksWithin(0, 0, 63, 63, createIfNull: false).ToList();
+                var chunksFound = map.ChunksWithin(0, 0, 31, 31, createIfNull: false).ToList();
                 Assert.AreEqual(2, chunksFound.Count);
-                Assert.AreEqual(3, chunksFound.Select(s => s.Item1).ElementAt(1));
+                Assert.AreEqual(1, chunksFound.Select(s => s.Item1.X).ElementAt(1));
                 
                 // Assert that these are the correct chunks.
                 Assert.That(chunksFound.ElementAt(0).Item2.Contains(2.0f));
@@ -197,6 +196,28 @@ namespace InfiniMap.Test
             map.UnloadArea(begin, end);
 
             Assert.AreEqual(0, map.Count);
+        }
+
+        [Test]
+        public void SupportsUnloadingWithPersistance()
+        {
+            var map = new Map2D<float>();
+
+            map[0, 0] = 2.0f;
+            map[16, 16] = 2.0f;
+            map[33, 33] = 4.0f;
+
+            Assert.AreEqual((16 * 16) * 3, map.Count);
+
+            map.MakePersistant((1, 1));
+
+            var begin = new WorldSpace2D(0, 0);
+            var end = new WorldSpace2D(33, 33);
+
+            map.UnloadArea(begin, end);
+
+            // One chunk left
+            Assert.AreEqual((16*16), map.Count);
         }
 
         [Test]

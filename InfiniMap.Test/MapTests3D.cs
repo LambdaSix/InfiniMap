@@ -1,5 +1,4 @@
 using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
@@ -27,7 +26,7 @@ namespace InfiniMap.Test
                 list.Add(xyz);
             });
 
-            map.UnloadArea(0, 0, 0, 32, 32, 32);
+            map.UnloadArea((0, 0, 0), (32, 32, 32));
 
             Assert.AreEqual(3, list.Count);
 
@@ -37,8 +36,8 @@ namespace InfiniMap.Test
 
             map.UnregisterWriter();
             map[48, 48, 48] = 4.0f;
-            
-            map.UnloadArea(0, 0, 0, 48, 48, 48);
+
+            map.UnloadArea((0, 0, 0), (48, 48, 48));
             Assert.AreEqual(3, list.Count);
         }
 
@@ -180,9 +179,27 @@ namespace InfiniMap.Test
 
             Assert.AreEqual((16*16*16)*3, map.Count);
 
-            map.UnloadArea(0, 0, 0, 33, 33, 33);
+            map.UnloadArea((0, 0, 0), (33, 33, 33));
 
             Assert.AreEqual(0, map.Count);
+        }
+
+        [Test]
+        public void SupportsUnloadingWithPersistance()
+        {
+            var map = new Map3D<float>();
+
+            map[0, 0, 0] = 2.0f;
+            map[16, 16, 16] = 2.0f;
+            map[33, 33, 33] = 4.0f;
+
+            Assert.AreEqual((16 * 16 * 16) * 3, map.Count);
+
+            map.MakePersistant((1, 1, 1));
+
+            map.UnloadArea((0, 0, 0), (33, 33, 33));
+
+            Assert.AreEqual((16*16*16), map.Count);
         }
 
         [Test]
@@ -363,7 +380,7 @@ namespace InfiniMap.Test
             Assert.That(map.GetEntitiesAt(1, 1, 1).Any());
             Assert.That(oldBoot.X == 1 && oldBoot.Y == 1);
 
-            Assert.That(map.GetEntitiesInChunk(new ChunkSpace(1, 1, 1)).Count() == 3);
+            Assert.That(map.GetEntitiesInChunk(new WorldSpace(0, 0, 0)).Count() == 3);
         }
 
         [Test]

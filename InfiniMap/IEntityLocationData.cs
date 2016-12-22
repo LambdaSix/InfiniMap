@@ -4,8 +4,6 @@ namespace InfiniMap
 {
     /// <summary>
     /// The bare minimum information a chunk needs to know to store an entities location.
-    /// Extend this interface in your own code to add any additional things you need to know
-    /// about an entity stored in a chunk and implement on your concrete class.
     /// </summary>
     /// <remarks>
     /// Positional values are nullable; as a null position is used to indicate an entity that is not
@@ -13,7 +11,7 @@ namespace InfiniMap
     /// When you invoke Chunk{T}.RemoveEntity() the item is not nulled out, only it's positional data,
     /// it merely ceases to be an item that chunk knows about, it will still exist in memory.
     /// </remarks>
-    public partial interface IEntityLocationData
+    public interface IEntityLocationData
     {
         long? X { get; set; }
         long? Y { get; set; }
