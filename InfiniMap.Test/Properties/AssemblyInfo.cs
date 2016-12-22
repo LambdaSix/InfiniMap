@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("InfiniMap.Test")]
-[assembly: AssemblyCopyright("Copyright 2014 LambdaSix")]
+[assembly: AssemblyCopyright("Copyright 2014-2016 LambdaSix")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
