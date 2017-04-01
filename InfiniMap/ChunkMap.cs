@@ -38,7 +38,7 @@ namespace InfiniMap
         public ChunkMap(int chunkHeight, int chunkWidth, int chunkDepth)
         {
             if (chunkHeight > 255 || chunkWidth > 255 || chunkDepth > 255)
-                throw new ArgumentException("Dimensions of a chunk cannot be larger than 64x64x64");
+                throw new ArgumentException("Dimensions of a chunk cannot be larger than 255x255x255");
 
             _chunkHeight = chunkHeight;
             _chunkWidth = chunkWidth;
