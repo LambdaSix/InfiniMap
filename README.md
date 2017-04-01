@@ -20,8 +20,6 @@ map[16, 16, 16] = 2.0f;     // Chunk: (1,1,1)
 map[32, 32, 32] = 4.0f;     // Chunk: (2,2,2)
 ```
 
-Maps can store anything as they are a generic container, and are expandable above three dimensions if required, although storage per chunk increases as a result.
-
 ### Saving/Loading data
 
 When infinimap generates a new chunk, it invokes a user registerable callback provided via `RegisterWriter(...)` which provides the chunk itself as a sequence and the chunk coordinates, there is also a `RegisterReader(...)` which provides chunk coordinates and expects a sequence in return.
