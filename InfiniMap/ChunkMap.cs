@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -25,23 +24,23 @@ namespace InfiniMap
     /// 
     /// </remarks>
     /// <typeparam name="T">Type of item to store in this collection</typeparam>
-    public abstract class ChunkMap<T>
+    public abstract partial class ChunkMap<T>
     {
-        private readonly int _chunkHeight;
         private readonly int _chunkWidth;
+        private readonly int _chunkHeight;
         private readonly int _chunkDepth;
         private readonly Dictionary<ChunkSpace, Chunk<T>> _map;
 
-        private Action<ChunkSpace, IEnumerable<T>> _writerFunc;
-        private Func<ChunkSpace, IEnumerable<T>> _readerFunc; 
+        private Action<ChunkSpace, Chunk<T>> _writerFunc;
+        private Func<ChunkSpace, Chunk<T>> _readerFunc; 
 
-        public ChunkMap(int chunkHeight, int chunkWidth, int chunkDepth)
+        public ChunkMap(int chunkWidth, int chunkHeight, int chunkDepth)
         {
-            if (chunkHeight > 255 || chunkWidth > 255 || chunkDepth > 255)
-                throw new ArgumentException("Dimensions of a chunk cannot be larger than 64x64x64");
+            if (chunkWidth > 255 || chunkHeight > 255 || chunkDepth > 255)
+                throw new ArgumentException("Dimensions of a chunk cannot be larger than 255x255x255");
 
-            _chunkHeight = chunkHeight;
             _chunkWidth = chunkWidth;
+            _chunkHeight = chunkHeight;
             _chunkDepth = chunkDepth;
             _map = new Dictionary<ChunkSpace, Chunk<T>>(8);
         }
@@ -126,11 +125,8 @@ namespace InfiniMap
         /// Register a call back for reading chunks in when they aren't found in memory.
         /// Return an empty list to create a new empty chunk.
         /// </summary>
-        /// <remarks>
-        /// The 
-        /// </remarks>
         /// <param name="readerFunc"></param>
-        public void RegisterReader(Func<ChunkSpace, IEnumerable<T>> readerFunc )
+        public void RegisterReader(Func<ChunkSpace, Chunk<T>> readerFunc )
         {
             _readerFunc = readerFunc;
         }
@@ -154,16 +150,16 @@ namespace InfiniMap
             {
                 var items = _readerFunc(coordinates).ToList();
 
-                if (items.Count > (_chunkHeight*_chunkWidth*_chunkDepth))
+                if (items.Count > (_chunkWidth*_chunkHeight*_chunkDepth))
                 {
                     throw new NotSupportedException("Attempted to load a item block larger than this Maps chunk dimensions");
                 }
 
-                return new Chunk<T>(_chunkHeight, _chunkWidth, _chunkDepth, items);
+                return new Chunk<T>(_chunkWidth, _chunkHeight, _chunkDepth, items);
             }
 
             // Without a reader function, just return a blank chunk.
-            return new Chunk<T>(_chunkHeight, _chunkWidth, _chunkDepth);
+            return new Chunk<T>(_chunkWidth, _chunkHeight, _chunkDepth);
         }
 
         /// <summary>
@@ -230,6 +226,8 @@ namespace InfiniMap
         /// If <paramref name="createIfNull"/> is false, then any chunks not currently in memory will be returned as null, no
         /// attempt to generate or load the chunks with user-callbacks is made.
         /// </summary>
+        /// <param name="begin">Start point to begin from</param>
+        /// <param name="end">End point to finish with</param>
         /// <param name="createIfNull">If false, do not create new chunks when a chunk is not currently loaded into memory</param>
         /// <returns>
         /// A list of pairs, containing the starting coordinates of the chunk, plus the chunk itself
@@ -299,7 +297,7 @@ namespace InfiniMap
         /// <summary>
         /// Unload a chunk from the world by the given chunk-space coordinates
         /// </summary>
-        /// <returns>True if the chunk was unloaded, false if the chunk was a persistant chunk</returns>
+        /// <returns>True if the chunk was unloaded, false if the chunk was a persistent chunk</returns>
         protected bool UnloadChunk(ChunkSpace coordinates)
         {
             var chunk = GetChunk(coordinates, createIfNull: false);
@@ -439,159 +437,5 @@ namespace InfiniMap
         }
 
         public virtual void MakePersistant(WorldSpace coordinates) => GetChunk(coordinates, createIfNull: false).Persist();
-
-        protected class Chunk<U> : IEnumerable<U>
-        {
-            private readonly int _chunkWidth;
-            private readonly int _chunkHeight;
-            private readonly int _chunkDepth;
-            private readonly U[] _blocks;
-            private readonly HashSet<IEntityLocationData> _items;
-            private bool _persist;
-
-            public bool IsPersisted => _persist;
-
-            public Chunk(int chunkHeight, int chunkWidth, int chunkDepth, IEnumerable<U> items)
-                : this(chunkHeight, chunkWidth, chunkDepth)
-            {
-                var array = items.ToArray();
-                _blocks = array.Any() ? array : new U[chunkHeight * chunkWidth * chunkDepth];
-                _items = new HashSet<IEntityLocationData>();
-            }
-
-            public Chunk(int chunkHeight, int chunkWidth, int chunkDepth)
-            {
-                _chunkWidth = chunkWidth;
-                _chunkHeight = chunkHeight;
-                _chunkDepth = chunkDepth;
-                _blocks = new U[chunkHeight * chunkWidth * chunkDepth];
-                _items = new HashSet<IEntityLocationData>();
-            }
-
-            public void Persist() => _persist = true;
-            public void Unpersist() => _persist = false;
-            public void TogglePersist() => _persist = !_persist;
-
-            public IEnumerable<IEntityLocationData> GetEntities()
-            {
-                return _items;
-            }
-
-            public void PutEntity(IEntityLocationData entity)
-            {
-                _items.Add(entity);
-            }
-
-            public void RemoveEntity(IEntityLocationData entity)
-            {
-                _items.Remove(entity);
-                entity.X = null;
-                entity.Y = null;
-                entity.Z = null;
-            }
-
-            public IEnumerable<IEntityLocationData> GetEntitiesAt(WorldSpace coordinates)
-            {
-                return _items.Where(item => item.ToWorldSpace() == coordinates);
-            }
-
-            public U this[WorldSpace coordinate]
-            {
-                get
-                {
-                    // Translate from world-space to chunk-space
-                    var chunkSpace = WorldToChunk(coordinate);
-                    var blockX = chunkSpace.X;
-                    var blockY = chunkSpace.Y;
-                    var blockZ = chunkSpace.Z;
-
-                    // Flat array, so walk the stride length for the Y component.
-                    return _blocks[blockX + _chunkWidth * (blockY + _chunkDepth * blockZ)];
-                }
-                set
-                {
-                    var chunkSpace = WorldToChunk(coordinate);
-                    var blockX = chunkSpace.X;
-                    var blockY = chunkSpace.Y;
-                    var blockZ = chunkSpace.Z;
-
-                    _blocks[blockX + _chunkWidth * (blockY + _chunkDepth * blockZ)] = value;
-                }
-            }
-
-            public U this[int n]
-            {
-                get { return _blocks[n]; }
-                set { _blocks[n] = value; }
-            }
-
-            public int Count { get { return _blocks.Length; } }
-
-            private ItemSpace WorldToChunk(WorldSpace coordinate)
-            {
-                var blockX = Math.Abs(coordinate.X) % _chunkHeight;
-                var blockY = Math.Abs(coordinate.Y) % _chunkWidth;
-                var blockZ = Math.Abs(coordinate.Z) % _chunkDepth;
-
-                return new ItemSpace((byte)blockX, (byte)blockY, (byte)blockZ);
-            }
-
-            private ChunkEnumerator Enumerate()
-            {
-                return new ChunkEnumerator(this);
-            }
-
-            IEnumerator IEnumerable.GetEnumerator()
-            {
-                return Enumerate();
-            }
-
-            public IEnumerator<U> GetEnumerator()
-            {
-                return Enumerate();
-            }
-
-            private class ChunkEnumerator : IEnumerator<U>
-            {
-                private readonly Chunk<U> _collection;
-                private int _index;
-                private U _current;
-
-                public U Current
-                {
-                    get { return _current; }
-                }
-
-                object IEnumerator.Current
-                {
-                    get { return Current; }
-                }
-
-                internal ChunkEnumerator(Chunk<U> collection)
-                {
-                    _collection = collection;
-                    _index = -1;
-                    _current = default(U);
-                }
-
-                public void Dispose() { }
-
-                public void Reset()
-                {
-                    _index = -1;
-                }
-
-                public bool MoveNext()
-                {
-                    if (++_index >= _collection.Count)
-                    {
-                        return false;
-                    }
-
-                    _current = _collection[_index];
-                    return true;
-                }
-            }
-        }
     }
 }

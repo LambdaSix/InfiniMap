@@ -48,10 +48,11 @@ namespace InfiniMap.Test
             int i = 0;
 
             // Assert that the Reader function is called for each new chunk loaded into memory
-            map.RegisterReader(tuple => {
-                                   i++;
-                                   return Enumerable.Empty<float>();
-                               });
+            map.RegisterReader(tuple =>
+            {
+                i++;
+                return new Chunk<float>(16, 16, 16);
+            });
 
             map[0, 0, 0] = 1.0f;        // Chunk: (0,0,0)
             map[16, 16, 16] = 2.0f;     // Chunk: (1,1,1)
