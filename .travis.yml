@@ -1,0 +1,14 @@
+language: csharp
+solution: InfiniMap.sln
+install:
+  - nuget restore OctoGhast.sln
+  - nuget install NUnit.Runners -OutputDirectory testrunner
+script:
+  - xbuild OctoGhast.sln /p:TargetFrameworkVersion="v4.5" /p:Configuration=Debug
+  - mono ./testrunner/NUnit.ConsoleRunner.*/tools/nunit3-console.exe ./InfiniMap.Tests/bin/Debug/InfiniMap.Tests.dll
+deploy:
+  skip_cleanup: true
+  provider: script
+  script: chmod +x ./deploy/deploy.sh && ./deploy/deploy.sh $NUGET_API_KEY $NUGET_SOURCE
+  on:
+    branch: master
