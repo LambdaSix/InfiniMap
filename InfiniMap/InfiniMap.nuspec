@@ -3,8 +3,8 @@
   <metadata>
     <id>InfiniMap</id>
     <version>$version$</version>
-    <title>$version$</title>
-		<authors>LambdaSix</authors>
+    <title>InfiniMap</title>
+    <authors>LambdaSix</author>
     <owners>LambdaSix</owners>
     <projectUrl>http://github.com/LambdaSix/InfiniMap</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
