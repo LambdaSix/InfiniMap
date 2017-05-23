@@ -4,7 +4,7 @@
     <id>InfiniMap</id>
     <version>$version$</version>
     <title>InfiniMap</title>
-    <authors>LambdaSix</author>
+    <authors>LambdaSix</authors>
     <owners>LambdaSix</owners>
     <projectUrl>http://github.com/LambdaSix/InfiniMap</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>

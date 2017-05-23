@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("Cubic-chunked map library")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyCopyright("Copyright 2014-2016 LambdaSix")]
+[assembly: AssemblyCopyright("Copyright 2014-2017 LambdaSix")]
 [assembly: AssemblyProduct("InfiniMap")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
