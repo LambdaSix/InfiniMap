@@ -11,4 +11,10 @@
     <description>Cubic chunked map library</description>
     <copyright>Copyright LambdaSix 2014</copyright>
   </metadata>
+  <dependencies>
+    <dependency id="System.ValueTuple" version="4.3.0" />
+  </dependencies>
+  <files>
+    <file src="bin\Release\*.dll" target="lib"/>
+  </files>
 </package>

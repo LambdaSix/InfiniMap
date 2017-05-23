@@ -4,8 +4,8 @@ install:
   - nuget restore InfiniMap.sln
   - nuget install NUnit.Runners -OutputDirectory testrunner
 script:
-  - xbuild InfiniMap.sln /p:TargetFrameworkVersion="v4.5" /p:Configuration=Debug
-  - mono ./testrunner/NUnit.ConsoleRunner.*/tools/nunit3-console.exe ./InfiniMap.Test/bin/Debug/InfiniMap.Test.dll
+  - xbuild InfiniMap.sln /p:TargetFrameworkVersion="v4.5" /p:Configuration=Release
+  - mono ./testrunner/NUnit.ConsoleRunner.*/tools/nunit3-console.exe ./InfiniMap.Test/bin/Release/InfiniMap.Test.dll
 deploy:
   skip_cleanup: true
   provider: script
