@@ -1,11 +1,11 @@
 language: csharp
 solution: InfiniMap.sln
 install:
-  - nuget restore OctoGhast.sln
+  - nuget restore InfiniMap.sln
   - nuget install NUnit.Runners -OutputDirectory testrunner
 script:
   - xbuild OctoGhast.sln /p:TargetFrameworkVersion="v4.5" /p:Configuration=Debug
-  - mono ./testrunner/NUnit.ConsoleRunner.*/tools/nunit3-console.exe ./InfiniMap.Tests/bin/Debug/InfiniMap.Tests.dll
+  - mono ./testrunner/NUnit.ConsoleRunner.*/tools/nunit3-console.exe ./InfiniMap.Test/bin/Debug/InfiniMap.Test.dll
 deploy:
   skip_cleanup: true
   provider: script
