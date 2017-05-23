@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>InfiniMap</id>
-    <version>$version$</version>
+    <version>1.3.0</version>
     <title>InfiniMap</title>
     <authors>LambdaSix</authors>
     <owners>LambdaSix</owners>
