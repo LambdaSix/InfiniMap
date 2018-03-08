@@ -1,14 +1,20 @@
 <?xml version="1.0"?>
-<package >
+<package xmlns="http://schemas.microsoft.com/packaging/2013/05/nuspec.xsd">
   <metadata>
     <id>InfiniMap</id>
-    <version>$version$</version>
-    <title>$version$</title>
-		<authors>LambdaSix</authors>
+    <version>1.3.0</version>
+    <title>InfiniMap</title>
+    <authors>LambdaSix</authors>
     <owners>LambdaSix</owners>
     <projectUrl>http://github.com/LambdaSix/InfiniMap</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Cubic chunked map library</description>
     <copyright>Copyright LambdaSix 2014</copyright>
+    <dependencies>
+      <dependency id="System.ValueTuple" version="4.3.0" />
+  </dependencies>
   </metadata>
+  <files>
+    <file src="bin\Release\*.dll" target="lib"/>
+  </files>
 </package>

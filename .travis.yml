@@ -1,0 +1,14 @@
+language: csharp
+solution: InfiniMap.sln
+install:
+  - nuget restore InfiniMap.sln
+  - nuget install NUnit.Runners -OutputDirectory testrunner
+script:
+  - xbuild InfiniMap.sln /p:TargetFrameworkVersion="v4.5" /p:Configuration=Release
+  - mono ./testrunner/NUnit.ConsoleRunner.*/tools/nunit3-console.exe ./InfiniMap.Test/bin/Release/InfiniMap.Test.dll
+deploy:
+  skip_cleanup: true
+  provider: script
+  script: chmod +x ./deploy/deploy.sh && ./deploy/deploy.sh $NUGET_API_KEY $NUGET_SOURCE
+  on:
+    branch: master
