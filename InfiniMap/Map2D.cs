@@ -6,7 +6,7 @@ namespace InfiniMap
 {
     public class Map2D<T> : ChunkMap<T>
     {
-        public Map2D(int chunkHeight, int chunkWidth) : base(chunkHeight, chunkWidth, 1) {}
+        public Map2D(int chunkWidth, int chunkHeight) : base(chunkWidth, chunkHeight, 1) {}
 
         public Map2D() : this(16, 16) { }
 

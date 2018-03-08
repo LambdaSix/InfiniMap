@@ -43,14 +43,14 @@ namespace InfiniMap.Test
         [Test]
         public void MapDeserializer()
         {
-            var map = new Map2D<float>();
+            var map = new Map2D<float>(16,16);
             int i = 0;
 
             // Assert that the Reader function is called for each new chunk loaded into memory
             map.RegisterReader(tuple =>
             {
                 i++;
-                return Enumerable.Empty<float>();
+                return new Chunk<float>(16, 16);
             });
 
             map[0, 0] = 1.0f;        // Chunk: (0,0,0)
@@ -346,6 +346,29 @@ namespace InfiniMap.Test
             Assert.That(map.GetEntitiesAt(1, 1).Any() == false);
             Assert.That(map.GetEntitiesAt(17, 17).Any());
             Assert.That(oldBoot.X == 17 && oldBoot.Y == 17);
+        }
+
+        [Test]
+        public void SupportsIrregularSizedMapChunks()
+        {
+            var map = new Map2D<float>(16, 32);
+
+            var oldBoot = new Entity { Name = "Old Boot" };
+            var newBoot = new Entity { Name = "New Boot" };
+
+            map.PutEntity(1, 1, oldBoot); // W:{1,1}, C:{0,0}
+            map.PutEntity(16, 33, newBoot); // w:{33,33}, C:{0,2}
+
+            Assert.That(map.GetEntitiesInChunk(new ChunkSpace(0, 0, 0)).Count(), Is.EqualTo(1));
+            Assert.That(map.GetEntitiesInChunk(new ChunkSpace(0, 2, 0)).Count(), Is.EqualTo(1));
+
+            Assert.That(map.GetEntitiesInChunk(new ChunkSpace(0, 0, 0)).Single(), Is.EqualTo(oldBoot));
+            Assert.That(map.GetEntitiesInChunk(new ChunkSpace(0, 2, 0)).Single(), Is.EqualTo(newBoot));
+
+            Assert.That(map.GetEntitiesAt(1, 1).Single() == oldBoot);
+            Assert.That(map.GetEntitiesAt(16, 33).Single() == newBoot);
+
+            Assert.That(map.ChunksWithin(0, 0, 33, 33, createIfNull: false).Count(), Is.EqualTo(2));
         }
 
         public class Entity : IEntityLocationData
