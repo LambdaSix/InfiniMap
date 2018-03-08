@@ -51,6 +51,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ChunkMapTests.cs" />
     <Compile Include="SpaceTests.cs" />
     <Compile Include="TestHelpers.cs" />
     <Compile Include="MapTests2D.cs" />

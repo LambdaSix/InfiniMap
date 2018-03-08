@@ -233,57 +233,54 @@ namespace InfiniMap
         /// A list of pairs, containing the starting coordinates of the chunk, plus the chunk itself
         /// as: (WorldSpace,Chunk{T})
         /// </returns>
-        protected virtual IEnumerable<Tuple<WorldSpace, Chunk<T>>> ChunksWithin(WorldSpace begin, WorldSpace end, bool createIfNull)
+        protected virtual IEnumerable<Tuple<WorldSpace, Chunk<T>>> ChunksWithin(WorldSpace begin, WorldSpace end,
+            bool createIfNull)
         {
-            var xPoints = new List<long>();
-            var yPoints = new List<long>();
-            var zPoints = new List<long>();
+            var c0 = TranslateWorldToChunk(begin);
+            var c1 = TranslateWorldToChunk(end);
 
-            var x0 = begin.X; var y0 = begin.Y; var z0 = begin.Z;
-            var x1 = end.X; var y1 = end.Y; var z1 = end.Z;
+            long x0 = c0.X * _chunkWidth;
+            long x1 = c1.X * _chunkWidth;
 
-            var xChunkLength = ((Math.Abs(x1) - Math.Abs(x0))/_chunkWidth) + 1;
-            var yChunkLength = ((Math.Abs(y1) - Math.Abs(y0))/_chunkHeight) + 1;
-            var zChunkLength = ((Math.Abs(z1) - Math.Abs(z0))/_chunkDepth) + 1;
+            long y0 = c0.Y * _chunkHeight;
+            long y1 = c1.Y * _chunkHeight;
 
-            for (int i = 0; i < xChunkLength; i++)
+            long z0 = c0.Z * _chunkDepth;
+            long z1 = c1.Z * _chunkDepth;
+
+            //begin with origin block and step over worldspace in chunk sized steps yielding the chunk tuple.
+            var xyzPoints = Range(x0, x1, _chunkWidth)
+                .SelectMany(x => Range(y0, y1, _chunkHeight)
+                    .SelectMany(y => Range(z0, z1, _chunkDepth)
+                        .Select(z => new WorldSpace(x, y, z))))
+                .Select(point => Tuple.Create(point, GetChunk(point, createIfNull)))
+                .Where(c => c.Item2 != null);
+
+            // Ensure chunk creation
+            return createIfNull ? xyzPoints.ToList() : xyzPoints;
+        }
+
+        private IEnumerable<long> Range(long from, long to, long step)
+        {
+            if (step <= 0L)
             {
-                var x = (x0 + (_chunkWidth*i));
-                xPoints.Add(x);
+                throw new ArgumentOutOfRangeException(nameof(step), "Step size must be greater than zero.");
             }
 
-            for (int i = 0; i < yChunkLength; i++)
+            if (from <= to)
             {
-                var y = (y0 + (_chunkHeight*i));
-                yPoints.Add(y);
-            }
-
-            for (int i = 0; i < zChunkLength; i++)
-            {
-                var z = (z0 + (_chunkDepth*i));
-                zPoints.Add(z);
-            }
-
-            var xyPoints = xPoints.Zip(yPoints, (x, y) => new {x, y}).ToList();
-
-            IEnumerable<WorldSpace> xyzPoints;
-
-            if (xyPoints.Count > zPoints.Count)
-            {
-                // Special-case, probably a 2D slice, so we want to zip along the length of the xyPoints, not zPoints
-                xyzPoints = xyPoints.Select((pair, i) => new WorldSpace(pair.x, pair.y, zPoints.ElementAtOrDefault(i)));
+                for (long el = from; el <= to; el += step)
+                {
+                    yield return el;
+                }
             }
             else
             {
-                // Zip along the zPoints, if there is an xy value for that z point then use it, otherwise use 0
-                xyzPoints = zPoints.Select((z, i) => new WorldSpace(
-                    xyPoints.ElementAtOrDefault(i) == null ? 0 : xyPoints[i].x,
-                    xyPoints.ElementAtOrDefault(i) == null ? 0 : xyPoints[i].y,
-                    z));
+                for (long el = from; el >= to; el -= step)
+                {
+                    yield return el;
+                }
             }
-
-            // Return (worldSpace, Chunk<T>)
-            return xyzPoints.Select(point => Tuple.Create(point, GetChunk(point, createIfNull)));
         }
 
         protected ChunkSpace TranslateWorldToChunk(WorldSpace worldSpace)
