@@ -1,0 +1,40 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <RootNamespace>InfiniMap_Net8</RootNamespace>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <Compile Include="..\InfiniMap\Chunk.cs">
+        <Link>Chunk.cs</Link>
+      </Compile>
+      <Compile Include="..\InfiniMap\ChunkMap.cs">
+        <Link>ChunkMap.cs</Link>
+      </Compile>
+      <Compile Include="..\InfiniMap\CoordinateSpaces\ChunkSpace.cs">
+        <Link>CoordinateSpaces\ChunkSpace.cs</Link>
+      </Compile>
+      <Compile Include="..\InfiniMap\CoordinateSpaces\ItemSpace.cs">
+        <Link>CoordinateSpaces\ItemSpace.cs</Link>
+      </Compile>
+      <Compile Include="..\InfiniMap\CoordinateSpaces\WorldSpace.cs">
+        <Link>CoordinateSpaces\WorldSpace.cs</Link>
+      </Compile>
+      <Compile Include="..\InfiniMap\Extensions\ChunkMapExtensions.cs">
+        <Link>Extensions\ChunkMapExtensions.cs</Link>
+      </Compile>
+      <Compile Include="..\InfiniMap\IEntityLocationData.cs">
+        <Link>IEntityLocationData.cs</Link>
+      </Compile>
+      <Compile Include="..\InfiniMap\Map2D.cs">
+        <Link>Map2D.cs</Link>
+      </Compile>
+      <Compile Include="..\InfiniMap\Map3D.cs">
+        <Link>Map3D.cs</Link>
+      </Compile>
+    </ItemGroup>
+
+</Project>

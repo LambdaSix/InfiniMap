@@ -5,6 +5,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InfiniMap", "InfiniMap\Infi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InfiniMap.Test", "InfiniMap.Test\InfiniMap.Test.csproj", "{46F9C21B-2333-4C3D-81EF-E7A84B443F87}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InfiniMap-Net8", "InfiniMap-Net8\InfiniMap-Net8.csproj", "{F4537BD1-1E15-4009-AD4F-FF523EBAABB9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NetFX", "NetFX", "{3CB4CF2F-3731-43D0-ABF2-7850E3294C62}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -35,8 +39,24 @@ Global
 		{46F9C21B-2333-4C3D-81EF-E7A84B443F87}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
 		{46F9C21B-2333-4C3D-81EF-E7A84B443F87}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{46F9C21B-2333-4C3D-81EF-E7A84B443F87}.Release|x86.ActiveCfg = Release|Any CPU
+		{F4537BD1-1E15-4009-AD4F-FF523EBAABB9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4537BD1-1E15-4009-AD4F-FF523EBAABB9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4537BD1-1E15-4009-AD4F-FF523EBAABB9}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{F4537BD1-1E15-4009-AD4F-FF523EBAABB9}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
+		{F4537BD1-1E15-4009-AD4F-FF523EBAABB9}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F4537BD1-1E15-4009-AD4F-FF523EBAABB9}.Debug|x86.Build.0 = Debug|Any CPU
+		{F4537BD1-1E15-4009-AD4F-FF523EBAABB9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4537BD1-1E15-4009-AD4F-FF523EBAABB9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4537BD1-1E15-4009-AD4F-FF523EBAABB9}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
+		{F4537BD1-1E15-4009-AD4F-FF523EBAABB9}.Release|Mixed Platforms.Build.0 = Release|Any CPU
+		{F4537BD1-1E15-4009-AD4F-FF523EBAABB9}.Release|x86.ActiveCfg = Release|Any CPU
+		{F4537BD1-1E15-4009-AD4F-FF523EBAABB9}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{955AF4C9-12E7-4447-8E7C-C3ACD38F2DA9} = {3CB4CF2F-3731-43D0-ABF2-7850E3294C62}
+		{46F9C21B-2333-4C3D-81EF-E7A84B443F87} = {3CB4CF2F-3731-43D0-ABF2-7850E3294C62}
 	EndGlobalSection
 EndGlobal
