@@ -27,7 +27,7 @@ namespace InfiniMap.Test
 
             map.UnloadArea(new WorldSpace2D(0, 0), new WorldSpace2D(32, 32));
 
-            Assert.AreEqual(3, list.Count);
+            Assert.That(list.Count, Is.EqualTo(3));
 
             Assert.That(list.Contains(new ChunkSpace(0L, 0L, 0L)));
             Assert.That(list.Contains(new ChunkSpace(1L, 1L, 0L)));
@@ -37,7 +37,7 @@ namespace InfiniMap.Test
             map[48, 48] = 4.0f;
 
             map.UnloadArea((0, 0), (48, 48));
-            Assert.AreEqual(3, list.Count);
+            Assert.That(list.Count, Is.EqualTo(3));
         }
 
         [Test]
@@ -57,13 +57,13 @@ namespace InfiniMap.Test
             map[16, 16] = 2.0f;      // Chunk: (1,1,0)
             map[32, 32] = 4.0f;      // Chunk: (2,2,0)
 
-            Assert.AreEqual(3, i);
+            Assert.That(i, Is.EqualTo(3));
 
             map.UnregisterReader();
             map[48, 48] = 8.0f;
 
             // Assert that after unregistering, the callback is not invoked.
-            Assert.AreEqual(3, i);
+            Assert.That(i, Is.EqualTo(3));
         }
     }
 
@@ -133,7 +133,7 @@ namespace InfiniMap.Test
             map[-1024, -887] = 8.0f;
 
             // With only two areas in memory, we only have (16*16)*2 blocks.
-            Assert.AreEqual(512, map.Count);
+            Assert.That(map.Count, Is.EqualTo(512));
         }
 
         [Test]
@@ -155,13 +155,13 @@ namespace InfiniMap.Test
             map[31, 31] = 4.0f;
 
             // Assert we have 2 chunks in memory.
-            Assert.AreEqual((16 * 16) * 2, map.Count);
+            Assert.That(map.Count, Is.EqualTo((16 * 16) * 2));
 
             // A single chunk
             {
                 var chunksFound = map.ChunksWithin(0, 0, 15, 15, createIfNull: false).ToList();
-                Assert.AreEqual(1, chunksFound.Count());
-                Assert.AreEqual(0, chunksFound.Select(s => s.Item1.X).First());
+                Assert.That(chunksFound.Count(), Is.EqualTo(1));
+                Assert.That(chunksFound.Select(s => s.Item1.X).First(), Is.EqualTo(0));
 
                 // Assert that it is the correct chunk
                 Assert.That(chunksFound.ElementAt(0).Item2.Contains(2.0f));
@@ -170,8 +170,8 @@ namespace InfiniMap.Test
             // Two chunks
             {
                 var chunksFound = map.ChunksWithin(0, 0, 31, 31, createIfNull: false).ToList();
-                Assert.AreEqual(2, chunksFound.Count);
-                Assert.AreEqual(1, chunksFound.Select(s => s.Item1.X).ElementAt(1));
+                Assert.That(chunksFound.Count, Is.EqualTo(2));
+                Assert.That(chunksFound.Select(s => s.Item1.X).ElementAt(1), Is.EqualTo(1));
                 
                 // Assert that these are the correct chunks.
                 Assert.That(chunksFound.ElementAt(0).Item2.Contains(2.0f));
@@ -188,14 +188,14 @@ namespace InfiniMap.Test
             map[16, 16] = 2.0f;
             map[33, 33] = 4.0f;
 
-            Assert.AreEqual((16 * 16) * 3, map.Count);
+            Assert.That(map.Count, Is.EqualTo((16 * 16) * 3));
 
             var begin = new WorldSpace2D(0, 0);
             var end = new WorldSpace2D(33, 33);
 
             map.UnloadArea(begin, end);
 
-            Assert.AreEqual(0, map.Count);
+            Assert.That(map.Count, Is.EqualTo(0));
         }
 
         [Test]
@@ -207,7 +207,7 @@ namespace InfiniMap.Test
             map[16, 16] = 2.0f;
             map[33, 33] = 4.0f;
 
-            Assert.AreEqual((16 * 16) * 3, map.Count);
+            Assert.That(map.Count, Is.EqualTo((16 * 16) * 3));
 
             map.MakePersistant((1, 1));
 
@@ -217,7 +217,7 @@ namespace InfiniMap.Test
             map.UnloadArea(begin, end);
 
             // One chunk left
-            Assert.AreEqual((16*16), map.Count);
+            Assert.That(map.Count, Is.EqualTo((16*16)));
         }
 
         [Test]
@@ -228,12 +228,12 @@ namespace InfiniMap.Test
             map[63, 63] = 4.0f;
 
             // Two chunks loaded
-            Assert.AreEqual((16*16)*2, map.Count);
+            Assert.That(map.Count, Is.EqualTo((16*16)*2));
 
             map.UnloadAreaOutside(0, 0, 15, 15);
 
             // Ony one chunk left
-            Assert.AreEqual((16*16), map.Count);
+            Assert.That(map.Count, Is.EqualTo((16*16)));
 
             // Non-zero test
 
@@ -246,11 +246,11 @@ namespace InfiniMap.Test
             map[96, 96] = 64.0f;
             map[128, 128] = 128.0f;
 
-            Assert.AreEqual((16*16)*8, map.Count);
+            Assert.That(map.Count, Is.EqualTo((16*16)*8));
 
             map.UnloadAreaOutside(48, 48, 80, 80);
 
-            Assert.AreEqual((16*16)*3, map.Count);
+            Assert.That(map.Count, Is.EqualTo((16*16)*3));
         }
     }
 
