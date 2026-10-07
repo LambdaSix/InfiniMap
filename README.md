@@ -1,7 +1,5 @@
 # InfiniMap
-Master: [![Build Status](https://travis-ci.org/LambdaSix/InfiniMap.svg?branch=master)](https://travis-ci.org/LambdaSix/InfiniMap)
-
-Develop: [![Build Status](https://travis-ci.org/LambdaSix/InfiniMap.svg?branch=Develop)](https://travis-ci.org/LambdaSix/InfiniMap)
+[![CI](https://github.com/LambdaSix/InfiniMap/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/LambdaSix/InfiniMap/actions/workflows/ci.yml)
 
 InfiniMap is a map library capable of expressing sparsely stored chunk based maps. 
 
